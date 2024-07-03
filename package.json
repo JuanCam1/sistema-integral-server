@@ -1,0 +1,33 @@
+{
+  "name": "sistemaintegralserver",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "capitalize": "^2.0.4",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-validator": "^7.1.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
+    "mysql2": "^3.10.1",
+    "node-cleanup": "^2.1.2",
+    "nodemon": "^3.1.4",
+    "public-ip": "^6.0.2",
+    "uuid": "^10.0.0",
+    "winston": "^3.13.0",
+    "xlsx-populate": "^1.21.0"
+  }
+}

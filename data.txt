@@ -1,0 +1,10 @@
+---------Area-----
+id_area
+name_area
+sede_area
+address_area
+flat_area
+phone_area
+extension_area
+
+--------User---------
