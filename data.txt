@@ -7,4 +7,7 @@ flat_area
 phone_area
 extension_area
 
---------User---------
+--------periodicities---------
+
+id_periodicity
+type_periodicity

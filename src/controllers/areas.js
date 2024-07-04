@@ -3,7 +3,7 @@ import {
   countAllModel,
   createAreaModel,
   getAreaByIdModel,
-  getAreaByNameModel,
+  getAreaIsExistModel,
   getAreasAllModel,
   getDownloadAreaModel,
   removeStateAreaModel,
@@ -20,7 +20,7 @@ export const createArea = async (req, res) => {
     const data = matchedData(req);
 
     const nameSearch = formatterCapitalize(data.name_area);
-    const [[[area]]] = await getAreaByNameModel(nameSearch);
+    const [[[area]]] = await getAreaIsExistModel(nameSearch);
 
     switch (area.result) {
       case -1:
@@ -118,7 +118,7 @@ export const getAreaById = async (req, res) => {
 
     const data = matchedData(req);
 
-    const [[[area]]] = await getAreaByIdModel(data.id_area);
+    const [[[area]]] = await getAreaByIdModel(data.idArea);
 
     if (!area) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -144,7 +144,6 @@ export const removeStateArea = async (req, res) => {
     const data = matchedData(req);
 
     const [[[area]]] = await getAreaByIdModel(data.idArea);
-    console.log("🚀 ~ removeStateArea ~ area:", area);
 
     if (!area) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -229,7 +228,6 @@ export const getDownloadArea = async (req, res) => {
     res.setHeader("Content-Type", "application/json");
 
     const data = matchedData(req);
-    console.log("🚀 ~ getDownloadArea ~ data:", data);
 
     const [[areas]] = await getDownloadAreaModel(data.state);
     // console.log(areas);
@@ -248,7 +246,7 @@ export const getDownloadArea = async (req, res) => {
 
     const headers = [
       "ID",
-      "Nombre",
+      "Nombre Area",
       "Sede",
       "Dirección",
       "Piso",

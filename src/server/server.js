@@ -6,6 +6,9 @@ import helmet from "helmet";
 import routerLogin from "../routes/login.js";
 import routerAreas from "../routes/areas.js";
 import { sendErrorResponse } from "../utils/sendResponse.js";
+import routerPlatforms from "../routes/Platform.js";
+import routerSede from "../routes/sede.js";
+import routerPeriodicity from "../routes/periodicity.js";
 
 //Create app
 const app = express();
@@ -25,7 +28,7 @@ app.use(helmet());
 
 app.use((req, res, next) => {
   console.log('🏈 Solicitud recibida:', req.method, req.url);
-  console.log('🏈 Solicitud recibida:', req.body, req.headers);
+  // console.log('🏈 Solicitud recibida:', req.body, req.headers);
   next();
 });
 
@@ -49,5 +52,8 @@ app.get("/", (req, res) => {
 
 app.use("/login", routerLogin);
 app.use("/areas", routerAreas);
+app.use("/platforms", routerPlatforms);
+app.use("/sedes", routerSede);
+app.use("/periodicity", routerPeriodicity);
 
 export default app;

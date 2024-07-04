@@ -65,13 +65,13 @@ export const getDownloadAreaModel = async (state) => {
   return result;
 };
 
-export const getAreaByNameModel = async (name_area) => {
+export const getAreaIsExistModel = async (name_area) => {
   name_area = name_area ?? "";
 
   const values = [name_area];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Area_getByName(?)", values);
+  const result = await promisePool.query("CALL strp_Area_isExist(?)", values);
   return result;
 };
 
