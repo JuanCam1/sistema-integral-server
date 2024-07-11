@@ -16,11 +16,12 @@ import { hashPassword } from "../utils/hashPassword.js";
 import XlsxPopulate from "xlsx-populate";
 import path from "path";
 import fs from "fs";
+import { getDownloadAreaModel } from "../models/areas.js";
 
 const mimeTypes = {
-  '.jpeg': 'image/jpeg',
-  '.jpg': 'image/jpeg',
-  '.png': 'image/png',
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
+  ".png": "image/png"
 };
 
 export const getImage = async (req, res) => {
@@ -37,9 +38,9 @@ export const getImage = async (req, res) => {
     }
 
     const ext = path.extname(filepath).toLowerCase();
-    const mimeType = mimeTypes[ext] || 'application/octet-stream';
-    
-    res.setHeader("Content-Type", mimeType); 
+    const mimeType = mimeTypes[ext] || "application/octet-stream";
+
+    res.setHeader("Content-Type", mimeType);
     res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
     res.sendFile(filepath);
   });
@@ -173,16 +174,23 @@ export const getUsersAll = async (req, res) => {
 
     // console.log(path.join("/uploads/photos", "photo_user-1720619939831-706577545.jpg"));
 
-    // users.map((user) => {
-    //   if (user.photo_user !== "sinphoto.jpg") {
-    //     return (user.photo_user = `/uploads/photos/${user.photo_user}`);
-    //   }
-    //   return user.photo_user;
-    // });
+    const usersMap = users.map((user) => {
+      let { id_area, name_area } = user;
 
+      id_area = id_area ?? "0";
+      name_area = name_area ?? "Sin Área";
+
+      return {
+        ...user,
+        id_area,
+        name_area
+      };
+    });
+
+    // console.log(usersMap);
     return sendSuccesResponse(res, 200, {
       count: usersCount.count,
-      users: users
+      users: usersMap
     });
   } catch (error) {
     console.log("🚀 ~ getUsersAll ~ error:", error);
@@ -219,14 +227,6 @@ export const removeStateUser = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-
-
 export const getAreaById = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -251,8 +251,6 @@ export const getAreaById = async (req, res) => {
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
-
-
 
 // export const updateArea = async (req, res) => {
 //   try {
