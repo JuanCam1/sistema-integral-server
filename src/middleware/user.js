@@ -2,7 +2,7 @@ import { check, validationResult } from "express-validator";
 import { sendErrorResponse } from "../utils/sendResponse.js";
 
 export const validateCreateUser = [
-  check("id_user")
+  check("cedula_user")
     .isLength({ min: 2, max: 200 })
     .withMessage("Must be between 1 and 200 characters"),
   check("names_user")
@@ -29,7 +29,7 @@ export const validateCreateUser = [
 ];
 
 export const validateUpdateUser = [
-  check("id_user").optional(),
+  check("cedula_user").optional(),
   check("names_user").optional(),
   check("lastnames").optional(),
   check("phone_user").optional(),
@@ -38,7 +38,7 @@ export const validateUpdateUser = [
   check("position_user").optional(),
   check("profile_user").optional(),
   check("photo_user").optional(),
-  check("AreaId").optional().optional()
+  check("areaId").optional()
 ];
 
 export const validateFileNameImage = [
@@ -61,7 +61,7 @@ export const validateUserAll = [
     .withMessage("Must be between 1 and 255 characters")
     .custom((value) => {
       const fields = [
-        "id_user",
+        "cedula_user",
         "names_user",
         "lastnames",
         "email_user",
@@ -81,7 +81,7 @@ export const validateUserAll = [
       }
 
       const fields = [
-        "id_user",
+        "cedula_user",
         "names_user",
         "lastnames",
         "email_user",

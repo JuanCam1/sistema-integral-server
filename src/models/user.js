@@ -1,7 +1,7 @@
 import { db } from "../../db/db.js";
 
 export const createUserModel = async (
-  id_user,
+  cedula_user,
   names_user,
   lastnames,
   phone_user,
@@ -12,7 +12,7 @@ export const createUserModel = async (
   profile_user,
   areaId
 ) => {
-  id_user = id_user ?? "";
+  cedula_user = cedula_user ?? "";
   names_user = names_user ?? "";
   lastnames = lastnames ?? "";
   phone_user = phone_user ?? "";
@@ -21,10 +21,14 @@ export const createUserModel = async (
   position_user = position_user ?? "";
   photo_user = photo_user ?? "";
   profile_user = profile_user ?? "";
-  areaId = areaId === "" ? null : areaId;
+  if (areaId === undefined || areaId === null || areaId === "" || areaId === 0) areaId = null;
+
+  if (profile_user !== "Funcionario") {
+    areaId = null;
+  }
 
   const values = [
-    id_user,
+    cedula_user,
     names_user,
     lastnames,
     phone_user,
@@ -35,6 +39,8 @@ export const createUserModel = async (
     profile_user,
     areaId
   ];
+
+  console.log(values);
 
   const promisePool = db.get().promise();
   const result = await promisePool.query("CALL strp_User_create(?,?,?,?,?,?,?,?,?,?)", values);
@@ -114,17 +120,19 @@ export const removeStateUserModel = async (id_user) => {
 
 export const updateUserModel = async (
   id_user,
+  cedula_user,
   names_user,
   lastnames,
   phone_user,
   email_user,
   password_user,
   position_user,
-  photo_user,
   profile_user,
+  photo_user,
   areaId
 ) => {
   id_user = id_user ?? "";
+  cedula_user = cedula_user ?? "";
   names_user = names_user ?? "";
   lastnames = lastnames ?? "";
   phone_user = phone_user ?? "";
@@ -133,10 +141,12 @@ export const updateUserModel = async (
   position_user = position_user ?? "";
   photo_user = photo_user ?? "";
   profile_user = profile_user ?? "";
-  areaId = areaId ?? "";
+
+  if (areaId === undefined || areaId === null || areaId === "" || areaId === 0) areaId = null;
 
   const values = [
     id_user,
+    cedula_user,
     names_user,
     lastnames,
     phone_user,
@@ -150,6 +160,9 @@ export const updateUserModel = async (
   console.log("🚀 ~ values:", values);
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_User_patch(?, ?, ?, ?, ?, ?,?,?,?,?)", values);
+  const result = await promisePool.query(
+    "CALL strp_User_patch(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    values
+  );
   return result;
 };

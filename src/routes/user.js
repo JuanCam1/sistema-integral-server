@@ -1,9 +1,18 @@
 import { Router } from "express";
-import { createUser, getAreasTotal, getDownloadUser, getImage, getUsersAll, removeStateUser } from "../controllers/user.js";
+import {
+  createUser,
+  getAreasTotal,
+  getDownloadUser,
+  getImage,
+  getUsersAll,
+  removeStateUser,
+  updateUser
+} from "../controllers/user.js";
 import {
   handleValidationErrors,
   validateCreateUser,
   validateFileNameImage,
+  validateUpdateUser,
   validateUserAll,
   validateUserById,
   validateUserState
@@ -23,7 +32,20 @@ const storagePhoto = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage: storagePhoto });
+const upload = multer({
+  storage: storagePhoto,
+  fileFilter: (req, file, cb) => {
+    const fileTypes = /jpeg|jpg|png|gif/;
+    const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimeType = fileTypes.test(file.mimetype);
+
+    if (extName && mimeType) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only images are allowed (jpeg, jpg, png, gif)"));
+    }
+  }
+});
 
 const routerUsers = Router();
 
@@ -35,6 +57,17 @@ routerUsers.post(
   validateCreateUser,
   handleValidationErrors,
   createUser
+);
+
+routerUsers.patch(
+  "/updateUser/:idUser",
+  ensureJWTAuth,
+  hasType(["Administrador", "Director", "Gestor"]),
+  upload.single("photo_user"),
+  validateUserById,
+  validateUpdateUser,
+  handleValidationErrors,
+  updateUser
 );
 
 routerUsers.post(
@@ -78,18 +111,6 @@ routerUsers.get(
 //   validateUserById,
 //   handleValidationErrors,
 //   getAreaById
-// );
-
-
-
-// routerUsers.patch(
-//   "/updateArea/:idArea",
-//   ensureJWTAuth,
-//   hasType(["Administrador"]),
-//   validateAreaById,
-//   validateUpdateArea,
-//   handleValidationErrors,
-//   updateArea
 // );
 
 routerUsers.get(

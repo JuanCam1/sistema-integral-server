@@ -50,7 +50,6 @@ export const getAreasTotal = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
 
-    // Trae todas las sedes dependiendo su estado
     const [[areas]] = await getDownloadAreaModel("1");
 
     if (!areas) return sendErrorResponse(res, 500, 301, "Error in database");
@@ -78,7 +77,7 @@ export const createUser = async (req, res) => {
     console.log("🚀 ~ createUser ~ data:", data);
 
     const {
-      id_user,
+      cedula_user,
       names_user,
       lastnames,
       phone_user,
@@ -93,8 +92,8 @@ export const createUser = async (req, res) => {
     const pisitionCapitalize = formatterCapitalize(position_user);
     const profileCapitalize = formatterCapitalize(profile_user);
 
-    const [[[userDocument]]] = await getUserIsExistModel(id_user, "isExistDocument");
-    const [[[userEmail]]] = await getUserIsExistModel(id_user, "isExistEmail");
+    const [[[userDocument]]] = await getUserIsExistModel(cedula_user, "isExistDocument");
+    const [[[userEmail]]] = await getUserIsExistModel(email_user, "isExistEmail");
 
     if (userDocument == -1 || userEmail == -1) {
       return sendErrorResponse(res, 404, 402, "User exists");
@@ -109,7 +108,7 @@ export const createUser = async (req, res) => {
     const photo = req?.file?.filename ?? "sinphoto.jpg";
 
     const [[[idUser]]] = await createUserModel(
-      id_user,
+      cedula_user,
       nameCapitalize,
       lastnameCapitalize,
       phone_user,
@@ -123,7 +122,7 @@ export const createUser = async (req, res) => {
 
     if (!idUser) return sendErrorResponse(res, 500, 301, "Error in database");
 
-    switch (id_user.result) {
+    switch (idUser.result) {
       case -1:
         return sendErrorResponse(res, 500, 402, "Error database");
       case -2:
@@ -132,9 +131,9 @@ export const createUser = async (req, res) => {
         return sendErrorResponse(res, 500, 301, "Error durante ejecución");
     }
 
-    return sendSuccesResponse(res, 202, data.id_user);
+    return sendSuccesResponse(res, 202, idUser);
   } catch (error) {
-    // console.log("🚀 ~ createUser ~ error:", error);
+    console.log("🚀 ~ createUser ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -164,15 +163,12 @@ export const getUsersAll = async (req, res) => {
     if (usersCount.length == 0) return sendErrorResponse(res, 404, 301, "Is empty");
 
     const [[users]] = await geUsersAllModel(data.limit, data.offset, order_by, data.order, filter);
-    // console.log("🚀 ~ getUsersAll ~ users:", users);
 
     if (!users) return sendErrorResponse(res, 500, 301, "Error in database");
 
     if (users.length === 0) return sendErrorResponse(res, 404, 301, "Is empty");
 
     if (users[0].result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    // console.log(path.join("/uploads/photos", "photo_user-1720619939831-706577545.jpg"));
 
     const usersMap = users.map((user) => {
       let { id_area, name_area } = user;
@@ -187,13 +183,12 @@ export const getUsersAll = async (req, res) => {
       };
     });
 
-    // console.log(usersMap);
     return sendSuccesResponse(res, 200, {
       count: usersCount.count,
       users: usersMap
     });
   } catch (error) {
-    console.log("🚀 ~ getUsersAll ~ error:", error);
+    // console.log("🚀 ~ getUsersAll ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -227,41 +222,13 @@ export const removeStateUser = async (req, res) => {
   }
 };
 
-export const getAreaById = async (req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
-    const [[[area]]] = await getAreaByIdModel(data.idArea);
-
-    if (!area) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (area.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
-        return sendErrorResponse(res, 404, 402, "Area no exist");
-    }
-
-    return sendSuccesResponse(res, 200, {
-      area
-    });
-  } catch (error) {
-    return sendErrorResponse(res, 500, 301, "Error in service or database");
-  }
-};
-
-// export const updateArea = async (req, res) => {
+// export const getAreaById = async (req, res) => {
 //   try {
 //     res.setHeader("Content-Type", "application/json");
 
 //     const data = matchedData(req);
-//     // console.log("🚀 ~ updateArea ~ data:", data);
-//     const { idArea, name_area, phone_area, extension_area, flat_area, sedeId } = data;
 
-//     const [[[area]]] = await getAreaByIdModel(idArea);
-//     // console.log("🚀 ~ updateArea ~ area:", area);
+//     const [[[area]]] = await getAreaByIdModel(data.idArea);
 
 //     if (!area) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -272,40 +239,117 @@ export const getAreaById = async (req, res) => {
 //         return sendErrorResponse(res, 404, 402, "Area no exist");
 //     }
 
-//     const isValid = (value) => value.trim() !== "" || value !== undefined || value !== null;
-
-//     const idValidate = isValid(idArea) ? Number(idArea) : area.id_area;
-//     const nameCapitalize = isValid(name_area) ? formatterCapitalize(name_area) : area.name_area;
-//     const phoneValidate = isValid(phone_area) ? phone_area : area.phone_area;
-//     const extensionValidate = isValid(extension_area) ? extension_area : area.extension_area;
-//     const flatCapitalize = isValid(flat_area) ? formatterCapitalize(flat_area) : area.flat_area;
-//     const sedeCapitalize = sedeId ? Number(sedeId) : area.sedeId;
-
-//     const [[[idAreaBD]]] = await updateAreaModel(
-//       idValidate,
-//       nameCapitalize,
-//       phoneValidate,
-//       extensionValidate,
-//       flatCapitalize,
-//       sedeCapitalize
-//     );
-//     console.log("🚀 ~ updateArea ~ idAreaBD:", idAreaBD);
-
-//     if (!idAreaBD) return sendErrorResponse(res, 500, 301, "Error in database");
-
-//     switch (idAreaBD.result) {
-//       case -1:
-//         return sendErrorResponse(res, 500, 402, "Error database");
-//       case -10:
-//         return sendErrorResponse(res, 500, 301, "Area no exist");
-//     }
-
-//     return sendSuccesResponse(res, 202, "area update");
+//     return sendSuccesResponse(res, 200, {
+//       area
+//     });
 //   } catch (error) {
-//     console.log("🚀 ~ updateUser ~ error:", error);
 //     return sendErrorResponse(res, 500, 301, "Error in service or database");
 //   }
 // };
+
+export const updateUser = async (req, res) => {
+  try {
+    res.setHeader("Content-Type", "application/json");
+
+    const data = matchedData(req);
+    const newPhoto = req?.file?.filename;
+
+    console.log("🚀 ~ updateuser ~ data:", data.profile_user);
+    const {
+      idUser,
+      cedula_user,
+      names_user,
+      lastnames,
+      phone_user,
+      email_user,
+      password_user,
+      position_user,
+      profile_user,
+      areaId
+    } = data;
+
+    const [[[user]]] = await getUserByIdModel(idUser);
+    // console.log("🚀 ~ updateUser ~ user:", user);
+    // console.log("🚀 ~ updateuser ~ user:", user.profile_user);
+
+    if (!user) return sendErrorResponse(res, 500, 301, "Error in database");
+
+    switch (user.result) {
+      case -1:
+        return sendErrorResponse(res, 500, 301, "Error in database");
+      case -2:
+        return sendErrorResponse(res, 404, 402, "User no exist");
+    }
+
+    const isValid = (value) => value.trim() !== "" || value !== undefined || value !== null;
+
+    const idValidate = isValid(idUser) ? Number(idUser) : user.id_user;
+    const cedulaValidate = isValid(cedula_user) ? cedula_user : user.cedula_user;
+    const nameCapitalize = isValid(names_user) ? formatterCapitalize(names_user) : user.names_user;
+    const lastnamesCapitalize = isValid(lastnames)
+      ? formatterCapitalize(lastnames)
+      : user.lastnames;
+    const phoneValidate = isValid(phone_user) ? phone_user : user.phone_user;
+    const emailValidate = isValid(email_user) ? email_user : user.email_user;
+
+    const positionValidate = isValid(position_user) ? position_user : user.position_user;
+    const profileValidate = isValid(profile_user) ? profile_user : user.profile_user;
+
+    const areaValid = areaId ? Number(areaId) : user.id_area;
+
+    let hashedPassword;
+    if (password_user.length === 0) {
+      if (password_user !== undefined) {
+        hashedPassword = await hashPassword(password_user);
+      } else {
+        hashPassword = user.password_user;
+      }
+    }
+
+    if (user.photo_user !== "sinphoto.jpg") {
+      if (newPhoto && user.photo_user) {
+        fs.unlink(path.join(process.cwd(), "uploads/photos", user.photo_user), (err) => {
+          if (err) {
+            console.error("Error deleting old image:", err);
+            return res.status(500).json({ error: "Error deleting old image" });
+          }
+        });
+      }
+    }
+
+    const photo = newPhoto || user.photo_user;
+    // console.log("🚀 ~ updateUser ~ photo:", photo);
+
+    const [[[idUserDb]]] = await updateUserModel(
+      idValidate,
+      cedulaValidate,
+      nameCapitalize,
+      lastnamesCapitalize,
+      phoneValidate,
+      emailValidate,
+      hashedPassword,
+      positionValidate,
+      profileValidate,
+      photo,
+      areaValid
+    );
+    // console.log("🚀 ~ updateArea ~ idUserDb:", idUserDb);
+
+    if (!idUserDb) return sendErrorResponse(res, 500, 301, "Error in database");
+
+    switch (idUserDb.result) {
+      case -1:
+        return sendErrorResponse(res, 500, 402, "Error database");
+      case -10:
+        return sendErrorResponse(res, 500, 301, "User no exist");
+    }
+
+    return sendSuccesResponse(res, 202, "user update");
+  } catch (error) {
+    // console.log("🚀 ~ updateUser ~ error:", error);
+    return sendErrorResponse(res, 500, 301, "Error in service or database");
+  }
+};
 
 export const getDownloadUser = async (req, res) => {
   try {
@@ -342,7 +386,7 @@ export const getDownloadUser = async (req, res) => {
     });
 
     users.forEach((user, rowIndex) => {
-      sheet.cell(rowIndex + 2, 1).value(user.id_user);
+      sheet.cell(rowIndex + 2, 1).value(user.cedula_user);
       sheet.cell(rowIndex + 2, 2).value(`${user.names_user} ${user.lastnames} `);
       sheet.cell(rowIndex + 2, 3).value(user.phone_user);
       sheet.cell(rowIndex + 2, 4).value(user.email_user);
