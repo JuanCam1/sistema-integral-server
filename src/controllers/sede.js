@@ -30,16 +30,14 @@ export const createSede = async (req, res) => {
         return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
-    const { name_sede, address_sede, flat_sede, ubication_sede } = data;
+    const { name_sede, address_sede, ubication_sede } = data;
     const nameCapitalize = formatterCapitalize(name_sede);
     const addressCapitalize = formatterCapitalize(address_sede);
-    const flatCapitalize = formatterCapitalize(flat_sede);
     const ubicationCapitalize = formatterCapitalize(ubication_sede);
 
     const [[[id_sede]]] = await createSedeModel(
       nameCapitalize,
       addressCapitalize,
-      flatCapitalize,
       ubicationCapitalize
     );
 
@@ -92,27 +90,23 @@ export const getSedeAll = async (req, res) => {
     res.setHeader("Content-Type", "application/json");
 
     const data = matchedData(req);
+    console.log("🚀 ~ getSedeAll ~ data:", data);
 
-    const filter = undefined;
+    let filter = undefined;
     if (data.filter !== undefined) {
-      const filter_a = JSON.parse(data.filter);
-
-      filter_a.forEach(function (element) {
-        if (filter.length === 0)
-          filter = filter + element.field + " " + element.operator + ' "' + element.value + '"';
-        else
-          filter =
-            filter + " AND " + element.field + " " + element.operator + ' "' + element.value + '"';
-      });
+      filter = formatterCapitalize(data.filter);
     }
 
     //Assemble order_by
-    const order_by = undefined;
+    let order_by = undefined;
     if (data.order_by !== undefined) {
       order_by = data.order_by;
     }
 
+    console.log('🏈',filter)
+
     const [[[sedesCount]]] = await countSedeAllModel(filter);
+    console.log("🚀 ~ getSedeAll ~ sedesCount:", sedesCount);
 
     if (!sedesCount) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -120,13 +114,7 @@ export const getSedeAll = async (req, res) => {
 
     if (sedesCount.length == 0) return sendErrorResponse(res, 404, 301, "Is empty");
 
-    const [[sedes]] = await getSedeAllModel(
-      data.limit,
-      data.offset,
-      order_by,
-      data.order,
-      filter
-    );
+    const [[sedes]] = await getSedeAllModel(data.limit, data.offset, order_by, data.order, filter);
 
     if (!sedes) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -139,6 +127,7 @@ export const getSedeAll = async (req, res) => {
       sedes: sedes
     });
   } catch (error) {
+    console.log("🚀 ~ getSedeAll ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -165,11 +154,11 @@ export const removeStateSede = async (req, res) => {
 
     if (!updateStateSede) return sendErrorResponse(res, 500, 301, "Error in database");
 
-    if (updateStateSede.result === -1)
-      return sendErrorResponse(res, 500, 301, "Error in database");
+    if (updateStateSede.result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
 
     return sendSuccesResponse(res, 200, "update state");
   } catch (error) {
+    console.log("🚀 ~ removeStateSede ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -192,24 +181,25 @@ export const updateSede = async (req, res) => {
         return sendErrorResponse(res, 404, 402, "Sede no exist");
     }
 
-    const { idSede, name_sede,address_sede,flat_sede,ubication_sede } = data;
+    const { idSede, name_sede, address_sede, ubication_sede } = data;
     const isValid = (value) => value.trim() !== "";
 
     const idValidate = isValid(idSede) ? Number(idSede) : sede.id_sede;
-    const nameCapitalize = isValid(name_sede)
-      ? formatterCapitalize(name_sede)
-      : sede.name_sede;
+    const nameCapitalize = isValid(name_sede) ? formatterCapitalize(name_sede) : sede.name_sede;
     const addressCapitalize = isValid(address_sede)
       ? formatterCapitalize(address_sede)
       : sede.address_sede;
-    const flatCapitalize = isValid(flat_sede)
-      ? formatterCapitalize(flat_sede)
-      : sede.flat_sede;
+
     const ubicationCapitalize = isValid(ubication_sede)
       ? formatterCapitalize(ubication_sede)
       : sede.ubication_sede;
 
-    const [[[idSedeBD]]] = await updateSedeModel(idValidate, nameCapitalize,addressCapitalize,flatCapitalize,ubicationCapitalize);
+    const [[[idSedeBD]]] = await updateSedeModel(
+      idValidate,
+      nameCapitalize,
+      addressCapitalize,
+      ubicationCapitalize
+    );
 
     if (!idSedeBD) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -226,6 +216,32 @@ export const updateSede = async (req, res) => {
   }
 };
 
+export const getSedesTotal = async (req, res) => {
+  try {
+    res.setHeader("Content-Type", "application/json");
+
+    const data = matchedData(req);
+
+    // Trae todas las sedes dependiendo su estado
+    const [[sedes]] = await getDownloadSedeModel(data.state);
+
+    if (!sedes) return sendErrorResponse(res, 500, 301, "Error in database");
+
+    switch (sedes.result) {
+      case -1:
+        return sendErrorResponse(res, 500, 301, "Error in database");
+      case -2:
+        return sendErrorResponse(res, 404, 402, "Sedes no exist");
+    }
+
+    return sendSuccesResponse(res, 200, {
+      sedes: sedes
+    });
+  } catch (error) {
+    return sendErrorResponse(res, 500, 301, "Error in service or database");
+  }
+};
+
 export const getDownloadSede = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -233,7 +249,6 @@ export const getDownloadSede = async (req, res) => {
     const data = matchedData(req);
 
     const [[sedes]] = await getDownloadSedeModel(data.state);
-    console.log("🏈",sedes)
 
     if (!sedes) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -247,7 +262,7 @@ export const getDownloadSede = async (req, res) => {
     const workbook = await XlsxPopulate.fromBlankAsync();
     const sheet = workbook.sheet(0);
 
-    const headers = ["ID","Nombre Sede","Dirección","Piso","Ubicación","Estado"];
+    const headers = ["ID", "Nombre Sede", "Dirección", "Ubicación", "Estado"];
     headers.forEach((header, idx) => {
       sheet.cell(1, idx + 1).value(header);
     });
@@ -256,9 +271,8 @@ export const getDownloadSede = async (req, res) => {
       sheet.cell(rowIndex + 2, 1).value(sede.id_sede);
       sheet.cell(rowIndex + 2, 2).value(sede.name_sede);
       sheet.cell(rowIndex + 2, 3).value(sede.address_sede);
-      sheet.cell(rowIndex + 2, 4).value(sede.flat_sede);
-      sheet.cell(rowIndex + 2, 5).value(sede.ubication_sede);
-      sheet.cell(rowIndex + 2, 6).value(sede.active_sede === 1 ? "Activo" : "Inactivo");
+      sheet.cell(rowIndex + 2, 4).value(sede.ubication_sede);
+      sheet.cell(rowIndex + 2, 5).value(sede.active_sede === 1 ? "Activo" : "Inactivo");
     });
 
     const buffer = await workbook.outputAsync();

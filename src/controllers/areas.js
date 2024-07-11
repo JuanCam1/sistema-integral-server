@@ -19,8 +19,11 @@ export const createArea = async (req, res) => {
 
     const data = matchedData(req);
 
-    const nameSearch = formatterCapitalize(data.name_area);
-    const [[[area]]] = await getAreaIsExistModel(nameSearch);
+    const { name_area, phone_area, flat_area, extension_area, sedeId } = data;
+    const nameCapitalize = formatterCapitalize(name_area);
+    const flatCapitalize = formatterCapitalize(flat_area);
+    
+    const [[[area]]] = await getAreaIsExistModel(nameCapitalize);
 
     switch (area.result) {
       case -1:
@@ -29,24 +32,18 @@ export const createArea = async (req, res) => {
         return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
-    const { name_area, sede_area, address_area, flat_area, phone_area, extension_area } = data;
-    const nameCapitalize = formatterCapitalize(name_area);
-    const sedeCapitalize = formatterCapitalize(sede_area);
-    const addresCapitalize = formatterCapitalize(address_area);
-    const flatCapitalize = formatterCapitalize(flat_area);
 
     const [[[id_area]]] = await createAreaModel(
       nameCapitalize,
-      sedeCapitalize,
-      addresCapitalize,
-      flatCapitalize,
       phone_area,
-      extension_area
+      extension_area,
+      flatCapitalize,
+      sedeId
     );
 
     if (!id_area) return sendErrorResponse(res, 500, 301, "Error in database");
 
-    switch (id_area) {
+    switch (id_area.result) {
       case -1:
         return sendErrorResponse(res, 500, 402, "Error database");
       case -2:
@@ -57,7 +54,7 @@ export const createArea = async (req, res) => {
 
     return sendSuccesResponse(res, 202, data.id_area);
   } catch (error) {
-    console.log(error);
+    console.log("🚀 ~ createArea ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -68,21 +65,13 @@ export const getAreasAll = async (req, res) => {
 
     const data = matchedData(req);
 
-    const filter = undefined;
+    let filter = undefined;
     if (data.filter !== undefined) {
-      const filter_a = JSON.parse(data.filter);
-
-      filter_a.forEach(function (element) {
-        if (filter.length === 0)
-          filter = filter + element.field + " " + element.operator + ' "' + element.value + '"';
-        else
-          filter =
-            filter + " AND " + element.field + " " + element.operator + ' "' + element.value + '"';
-      });
+      filter = formatterCapitalize(data.filter);
     }
 
     //Assemble order_by
-    const order_by = undefined;
+    let order_by = undefined;
     if (data.order_by !== undefined) {
       order_by = data.order_by;
     }
@@ -108,6 +97,7 @@ export const getAreasAll = async (req, res) => {
       areas: areas
     });
   } catch (error) {
+    console.log("🚀 ~ getAreasAll ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -133,6 +123,7 @@ export const getAreaById = async (req, res) => {
       area
     });
   } catch (error) {
+    console.log("🚀 ~ getAreaById ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -171,8 +162,11 @@ export const updateArea = async (req, res) => {
     res.setHeader("Content-Type", "application/json");
 
     const data = matchedData(req);
+    // console.log("🚀 ~ updateArea ~ data:", data);
+    const { idArea, name_area, phone_area, extension_area, flat_area, sedeId } = data;
 
-    const [[[area]]] = await getAreaByIdModel(data.idArea);
+    const [[[area]]] = await getAreaByIdModel(idArea);
+    // console.log("🚀 ~ updateArea ~ area:", area);
 
     if (!area) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -183,30 +177,24 @@ export const updateArea = async (req, res) => {
         return sendErrorResponse(res, 404, 402, "Area no exist");
     }
 
-    const { idArea, name_area, sede_area, address_area, flat_area, phone_area, extension_area } =
-      data;
+    const isValid = (value) => value.trim() !== "" || value !== undefined || value !== null;
 
-    const isValid = (value) => value.trim() !== "";
-
-    const nameCapitalize = isValid(name_area) ? formatterCapitalize(name_area) : area.name_area;
-    const sedeCapitalize = isValid(sede_area) ? formatterCapitalize(sede_area) : area.sede_area;
-    const addresCapitalize = isValid(address_area)
-      ? formatterCapitalize(address_area)
-      : area.addres_area;
-    const flatCapitalize = isValid(flat_area) ? formatterCapitalize(flat_area) : area.flat_area;
     const idValidate = isValid(idArea) ? Number(idArea) : area.id_area;
+    const nameCapitalize = isValid(name_area) ? formatterCapitalize(name_area) : area.name_area;
     const phoneValidate = isValid(phone_area) ? phone_area : area.phone_area;
     const extensionValidate = isValid(extension_area) ? extension_area : area.extension_area;
+    const flatCapitalize = isValid(flat_area) ? formatterCapitalize(flat_area) : area.flat_area;
+    const sedeCapitalize = sedeId ? Number(sedeId) : area.sedeId;
 
     const [[[idAreaBD]]] = await updateAreaModel(
       idValidate,
       nameCapitalize,
-      sedeCapitalize,
-      addresCapitalize,
-      flatCapitalize,
       phoneValidate,
-      extensionValidate
+      extensionValidate,
+      flatCapitalize,
+      sedeCapitalize
     );
+    console.log("🚀 ~ updateArea ~ idAreaBD:", idAreaBD);
 
     if (!idAreaBD) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -219,6 +207,7 @@ export const updateArea = async (req, res) => {
 
     return sendSuccesResponse(res, 202, "area update");
   } catch (error) {
+    console.log("🚀 ~ updateArea ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -230,7 +219,6 @@ export const getDownloadArea = async (req, res) => {
     const data = matchedData(req);
 
     const [[areas]] = await getDownloadAreaModel(data.state);
-    // console.log(areas);
 
     if (!areas) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -249,6 +237,7 @@ export const getDownloadArea = async (req, res) => {
       "Nombre Area",
       "Sede",
       "Dirección",
+      "Ubicación",
       "Piso",
       "Telefono",
       "Extensión",
@@ -259,28 +248,26 @@ export const getDownloadArea = async (req, res) => {
     });
 
     areas.forEach((area, rowIndex) => {
-      console.log(area)
-      console.log(area.extension_area)
       sheet.cell(rowIndex + 2, 1).value(area.id_area);
       sheet.cell(rowIndex + 2, 2).value(area.name_area);
-      sheet.cell(rowIndex + 2, 3).value(area.sede_area);
-      sheet.cell(rowIndex + 2, 4).value(area.address_area);
-      sheet.cell(rowIndex + 2, 5).value(area.flat_area);
-      sheet.cell(rowIndex + 2, 6).value(area.phone_area);
-      sheet.cell(rowIndex + 2, 7).value(area.extension_area);
-      sheet.cell(rowIndex + 2, 8).value(area.active_area === 1 ? "Activo" : "Inactivo");
+      sheet.cell(rowIndex + 2, 3).value(area.name_sede);
+      sheet.cell(rowIndex + 2, 4).value(area.address_sede);
+      sheet.cell(rowIndex + 2, 5).value(area.ubication_sede);
+      sheet.cell(rowIndex + 2, 6).value(area.flat_area);
+      sheet.cell(rowIndex + 2, 7).value(area.phone_area);
+      sheet.cell(rowIndex + 2, 8).value(area.extension_area);
+      sheet.cell(rowIndex + 2, 9).value(area.active_area === 1 ? "Activo" : "Inactivo");
     });
 
     const buffer = await workbook.outputAsync();
 
-    res.setHeader("Content-Disposition", "attachment; filename=areas.xlsx");
+    res.setHeader("Content-Disposition", "attachment; filename=Areas.xlsx");
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     res.send(buffer);
   } catch (error) {
-    console.log(error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };

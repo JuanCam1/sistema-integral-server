@@ -11,7 +11,7 @@ export function createToken(user) {
     lastname: user.lastname,
     email_user: user.email_user,
     profile_user: user.profile_user,
-    exp: moment().add(1, "days").unix()
+    exp: moment().add(20, "days").unix()
   };
   // exp: moment().add(1, "hours").unix()
 

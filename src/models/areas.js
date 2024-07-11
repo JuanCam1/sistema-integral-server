@@ -1,24 +1,16 @@
 import { db } from "../../db/db.js";
 
-export const createAreaModel = async (
-  name_area,
-  sede_area,
-  address_area,
-  flat_area,
-  phone_area,
-  extension_area
-) => {
+export const createAreaModel = async (name_area, phone_area, extension_area, flat_area, sedeId) => {
   name_area = name_area ?? "";
-  sede_area = sede_area ?? "";
-  address_area = address_area ?? "";
-  flat_area = flat_area ?? "";
   phone_area = phone_area ?? "";
   extension_area = extension_area ?? "";
+  flat_area = flat_area ?? "";
+  sedeId = sedeId ?? "";
 
-  const values = [name_area, sede_area, address_area, flat_area, phone_area, extension_area];
+  const values = [name_area, phone_area, extension_area, flat_area, sedeId];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_create_area(?,?,?,?,?,?)", values);
+  const result = await promisePool.query("CALL strp_Area_create(?,?,?,?,?)", values);
   return result;
 };
 
@@ -88,32 +80,22 @@ export const removeStateAreaModel = async (id_area) => {
 export const updateAreaModel = async (
   id_area,
   name_area,
-  sede_area,
-  address_area,
-  flat_area,
   phone_area,
   extension_area,
+  flat_area,
+  sedeId
 ) => {
-  //Checking Data
   id_area = id_area ?? "";
   name_area = name_area ?? "";
-  sede_area = sede_area ?? "";
-  address_area = address_area ?? "";
-  flat_area = flat_area ?? "";
   phone_area = phone_area ?? "";
   extension_area = extension_area ?? "";
+  flat_area = flat_area ?? "";
+  sedeId = sedeId ?? "";
 
-  const values = [
-    id_area,
-    name_area,
-    sede_area,
-    address_area,
-    flat_area,
-    phone_area,
-    extension_area
-  ]
+  const values = [id_area, name_area, phone_area, extension_area, flat_area, sedeId];
+  console.log("🚀 ~ values:", values);
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Area_patch(?, ?, ?, ?, ?, ?, ?)", values);
+  const result = await promisePool.query("CALL strp_Area_patch(?, ?, ?, ?, ?, ?)", values);
   return result;
 };

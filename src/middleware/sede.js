@@ -8,9 +8,6 @@ export const validateCreateSede = [
   check("address_sede")
     .isLength({ min: 2, max: 200 })
     .withMessage("Must be between 2 and 200 characters"),
-  check("flat_sede")
-    .isLength({ min: 2, max: 200 })
-    .withMessage("Must be between 2 and 200 characters"),
   check("ubication_sede")
     .isLength({ min: 2, max: 200 })
     .withMessage("Must be between 2 and 200 characters")
@@ -21,7 +18,6 @@ export const validateUpdateSede = [
   check("id_sede").optional(),
   check("name_sede").optional(),
   check("address_sede").optional(),
-  check("flat_sede").optional(),
   check("ubication_sede").optional()
 ];
 
@@ -38,10 +34,8 @@ export const validateSedeAll = [
     .withMessage("Should be an integer between 0 and 1"),
   check("order_by")
     .optional()
-    .isLength({ min: 1, max: 255 })
-    .withMessage("Must be between 1 and 255 characters")
     .custom((value) => {
-      var fields = ["id_sede,name_sede,address_sede,flat_sede,ubication_sede"];
+      const fields = ["name_sede,address_sede,ubication_sede"];
       if (!fields.includes(value)) throw new Error("Not a valid field");
       else return true;
     })
@@ -49,27 +43,20 @@ export const validateSedeAll = [
   check("filter")
     .optional()
     .custom((value) => {
+
       if (!value) {
-        throw new Error("Filter is not a valid json");
+        throw new Error("Filter is not a valid ");
       }
 
-      const value_a = JSON.parse(value);
-
-      const fields = ["id_sede,name_sede,address_sede,flat_sede,ubication_sede"];
+      const fields = ["name_sede,address_sede,ubication_sede"];
       const operators = ["=", "!=", ">", "<", ">=", "<=", "LIKE"];
-      if (!(value_a instanceof Array)) throw new Error("Filter should be an array");
-      value_a.forEach((element) => {
-        if (
-          element.field === undefined ||
-          element.operator === undefined ||
-          element.value === undefined
-        )
-          throw new Error(`Not a valid filter: ${JSON.stringify(element)}`);
-        if (!fields.includes(element.field))
-          throw new Error(`Not a valid field: ${JSON.stringify(element)}`);
-        if (!operators.includes(element.operator))
-          throw new Error(`Not a valid operator: ${JSON.stringify(element)}`);
-      });
+
+      if (fields.includes(value)) {
+        throw new Error(`Not a valid field: ${JSON.stringify(value)}`);
+      }
+      if (operators.includes(value)) {
+        throw new Error(`Not a valid operator: ${JSON.stringify(value)}`);
+      }
       return true;
     })
 ];

@@ -4,52 +4,33 @@ import { sendErrorResponse } from "../utils/sendResponse.js";
 export const validateCreateArea = [
   check("name_area")
     .isLength({ min: 2, max: 200 })
-    .withMessage("Must be between 1 and 100 characters"),
-  check("sede_area")
-    .isLength({ min: 3, max: 100 })
-    .withMessage("Must be between 1 and 100 characters"),
-  check("address_area")
-    .isLength({ min: 4, max: 100 })
-    .withMessage("Must be between 1 and 100 characters"),
-  check("flat_area")
-    .isLength({ min: 1, max: 50 })
-    .withMessage("Must be between 1 and 100 characters"),
+    .withMessage("Must be between 1 and 200 characters"),
   check("phone_area")
-    .isLength({ min: 4, max: 50 })
-    .withMessage("Must be between 1 and 100 characters"),
+    .isLength({ min: 3, max: 80 })
+    .withMessage("Must be between 1 and 80 characters"),
+  check("flat_area")
+    .optional()
+    .isLength({ min: 4, max: 200 })
+    .withMessage("Must be between 1 and 200 characters"),
   check("extension_area")
-    .isLength({ min: 1, max: 20 })
-    .withMessage("Must be between 1 and 100 characters")
+    .optional()
+    .isLength({ min: 1, max: 45 })
+    .withMessage("Must be between 1 and 45 characters"),
+  check("sedeId").isLength({ min: 1, max: 45 }).withMessage("Must be between 1 and 45 characters")
 ];
 
 export const validateUpdateArea = [
-  check("id_area")
-  .optional(),
-  check("name_area")
-    .optional(),
-  check("sede_area")
-    .optional(),
-  check("address_area")
-    .optional(),
-  check("flat_area")
-    .optional(),
-  check("phone_area")
-    .optional(),
-  check("extension_area")
-    .optional(),
+  check("id_area").optional(),
+  check("name_area").optional(),
+  check("phone_area").optional(),
+  check("extension_area").optional(),
+  check("flat_area").optional(),
+  check("sedeId").optional()
 ];
 
-export const validateAreaById = [
-  check("idArea")
-    .exists()
-    .withMessage("Area id is required")
-];
+export const validateAreaById = [check("idArea").exists().withMessage("Area id is required")];
 
-export const validateAreaState = [
-  check("state")
-    .exists()
-    .withMessage("Area state is required")
-];
+export const validateAreaState = [check("state").exists().withMessage("Area state is required")];
 
 export const validateAreaAll = [
   check("limit").optional().isInt({ min: 1 }).withMessage("Should be an integer greater than 0"),
@@ -63,14 +44,13 @@ export const validateAreaAll = [
     .isLength({ min: 1, max: 255 })
     .withMessage("Must be between 1 and 255 characters")
     .custom((value) => {
-      var fields = [
+      const fields = [
         "id_area",
         "name_area",
-        "sede_area",
-        "address_area",
         "flat_area",
         "phone_area",
-        "extension_area"
+        "extension_area",
+        "name_sede"
       ];
       if (!fields.includes(value)) throw new Error("Not a valid field");
       else return true;
@@ -80,42 +60,26 @@ export const validateAreaAll = [
     .optional()
     .custom((value) => {
       if (!value) {
-        throw new Error("Filter is not a valid json");
+        throw new Error("Filter is not a valid ");
       }
 
-      const value_a = JSON.parse(value);
+      const fields = ["name_area", "name_sede", "ubication_sede"];
+      const operators = ["=", "!=", ">", "<", ">=", "<=", "LIKE"];
 
-      var fields = [
-        "id_area",
-        "name_area",
-        "sede_area",
-        "address_area",
-        "flat_area",
-        "phone_area",
-        "extension_area"
-      ];
-      var operators = ["=", "!=", ">", "<", ">=", "<=", "LIKE"];
-      if (!(value_a instanceof Array)) throw new Error("Filter should be an array");
-      value_a.forEach((element) => {
-        if (
-          element.field === undefined ||
-          element.operator === undefined ||
-          element.value === undefined
-        )
-          throw new Error(`Not a valid filter: ${JSON.stringify(element)}`);
-        if (!fields.includes(element.field))
-          throw new Error(`Not a valid field: ${JSON.stringify(element)}`);
-        if (!operators.includes(element.operator))
-          throw new Error(`Not a valid operator: ${JSON.stringify(element)}`);
-      });
+      if (fields.includes(value)) {
+        throw new Error(`Not a valid field: ${JSON.stringify(value)}`);
+      }
+      if (operators.includes(value)) {
+        throw new Error(`Not a valid operator: ${JSON.stringify(value)}`);
+      }
       return true;
     })
 ];
 
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
-  console.log("🚀 ~ handleValidationErrors ~ errors:", errors);
-  
+  // console.log("🚀 ~ handleValidationErrors ~ errors:", errors);
+
   if (!errors.isEmpty()) return sendErrorResponse(res, 400, 201, "Request has invalid data");
   next();
 };

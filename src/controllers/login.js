@@ -16,8 +16,6 @@ export const login = async (req, res) => {
     //Get user information
     const [[[user]]] = await getByEmail(data.email_user);
 
-    console.log("🚀 ~ login ~ User:", user);
-
     if (!user) return sendErrorResponse(res, 500, 301, "Error in database");
 
     switch (user) {

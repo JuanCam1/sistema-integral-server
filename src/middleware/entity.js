@@ -1,23 +1,39 @@
 import { check, validationResult } from "express-validator";
 import { sendErrorResponse } from "../utils/sendResponse.js";
 
-export const validateCreatePeriodicity = [
-  check("type_periodicity")
+export const validateCreateEntity = [
+  check("name_entity")
+    .isLength({ min: 2, max: 200 })
+    .withMessage("Must be between 2 and 200 characters"),
+  check("address_entity")
+    .optional()
+    .isLength({ min: 2, max: 200 })
+    .withMessage("Must be between 2 and 200 characters"),
+  check("phone_entity")
+    .optional()
+    .isLength({ min: 2, max: 200 })
+    .withMessage("Must be between 2 and 200 characters"),
+  check("email_entity")
     .isLength({ min: 2, max: 200 })
     .withMessage("Must be between 2 and 200 characters")
 ];
 
-export const validateUpdatePeriodicity = [
-  check("idPeriodicity").exists().withMessage("Periodicity id is required"),
-  check("id_periodicity").optional(),
-  check("type_periodicity").optional()
+export const validateUpdateEntity = [
+  check("idEntity").exists().withMessage("Entity id is required"),
+  check("id_entity").optional(),
+  check("name_entity").optional(),
+  check("address_entity").optional(),
+  check("phone_entity").optional(),
+  check("email_entity").optional()
 ];
 
-export const validatePeriodicityById = [
-  check("idPeriodicity").exists().withMessage("Periodicity id is required")
+export const validateEntityById = [check("idEntity").exists().withMessage("Entity id is required")];
+
+export const validateEntityState = [
+  check("state").exists().withMessage("Entity state is required")
 ];
 
-export const validatePeriodicityAll = [
+export const validateEntityAll = [
   check("limit").optional().isInt({ min: 1 }).withMessage("Should be an integer greater than 0"),
   check("offset").optional().isInt({ min: 0 }).withMessage("Should be an integer"),
   check("order")
@@ -27,7 +43,7 @@ export const validatePeriodicityAll = [
   check("order_by")
     .optional()
     .custom((value) => {
-      const fields = ["id_periodicity,type_periodicity"];
+      const fields = ["name_entity,email_entity"];
       if (!fields.includes(value)) throw new Error("Not a valid field");
       else return true;
     })
@@ -36,10 +52,9 @@ export const validatePeriodicityAll = [
     .optional()
     .custom((value) => {
       if (!value) {
-        throw new Error("Filter is not a valid");
+        throw new Error("Filter is not a valid ");
       }
-
-      const fields = ["id_periodicity,type_periodicity"];
+      const fields = ["name_entity,email_entity"];
       const operators = ["=", "!=", ">", "<", ">=", "<=", "LIKE"];
 
       if (fields.includes(value)) {

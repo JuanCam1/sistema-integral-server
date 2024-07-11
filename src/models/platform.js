@@ -1,12 +1,14 @@
 import { db } from "../../db/db.js";
 
-export const createPlatformModel = async (name_platform) => {
+export const createPlatformModel = async (name_platform, website_platform, sedeId) => {
   name_platform = name_platform ?? "";
+  website_platform = website_platform ?? "";
+  sedeId = sedeId ?? "";
 
-  const values = [name_platform];
+  const values = [name_platform, website_platform, sedeId];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Platform_create(?)", values);
+  const result = await promisePool.query("CALL strp_Platform_create(?,?,?)", values);
   return result;
 };
 
@@ -54,14 +56,16 @@ export const removeStatePlatformModel = async (id_platform) => {
   return result;
 };
 
-export const updatePlatformModel =  async (id_platform,name_platform) => {
+export const updatePlatformModel = async (id_platform, name_platform, website_platform, entityId) => {
   id_platform = id_platform ?? "";
   name_platform = name_platform ?? "";
+  website_platform = website_platform ?? "";
+  entityId = entityId ?? "";
 
-  const values = [id_platform,name_platform];
+  const values = [id_platform, name_platform, website_platform, entityId];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Platform_patch(?,?)", values);
+  const result = await promisePool.query("CALL strp_Platform_patch(?,?,?,?)", values);
   return result;
 };
 
@@ -78,6 +82,6 @@ export const getPlatformIsExistModel = async (name_platform) => {
   const values = [name_platform];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Platform_isExist(?)", values);
+  const result = await promisePool.query("CALL strp_Platform_isExistName(?)", values);
   return result;
 };

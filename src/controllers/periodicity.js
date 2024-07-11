@@ -32,9 +32,7 @@ export const createPeriodicity = async (req, res) => {
 
     const nameCapitalize = formatterCapitalize(type_periodicity);
 
-    const [[[id_periodicity]]] = await createPeriodicityModel(
-      nameCapitalize
-    );
+    const [[[id_periodicity]]] = await createPeriodicityModel(nameCapitalize);
 
     if (!id_periodicity) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -86,21 +84,13 @@ export const getPeriodicityAll = async (req, res) => {
 
     const data = matchedData(req);
 
-    const filter = undefined;
+    let filter = undefined;
     if (data.filter !== undefined) {
-      const filter_a = JSON.parse(data.filter);
-
-      filter_a.forEach(function (element) {
-        if (filter.length === 0)
-          filter = filter + element.field + " " + element.operator + ' "' + element.value + '"';
-        else
-          filter =
-            filter + " AND " + element.field + " " + element.operator + ' "' + element.value + '"';
-      });
+      filter = formatterCapitalize(data.filter);
     }
 
     //Assemble order_by
-    const order_by = undefined;
+    let order_by = undefined;
     if (data.order_by !== undefined) {
       order_by = data.order_by;
     }
@@ -109,17 +99,25 @@ export const getPeriodicityAll = async (req, res) => {
 
     if (!periodicitiesCount) return sendErrorResponse(res, 500, 301, "Error in database");
 
-    if (periodicitiesCount.result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (periodicitiesCount.result === -1)
+      return sendErrorResponse(res, 500, 301, "Error in database");
 
     if (periodicitiesCount.length == 0) return sendErrorResponse(res, 404, 301, "Is empty");
 
-    const [[periodicities]] = await getPeriodicityAllModel(data.limit, data.offset, order_by, data.order, filter);
+    const [[periodicities]] = await getPeriodicityAllModel(
+      data.limit,
+      data.offset,
+      order_by,
+      data.order,
+      filter
+    );
 
     if (!periodicities) return sendErrorResponse(res, 500, 301, "Error in database");
 
     if (periodicities.length === 0) return sendErrorResponse(res, 404, 301, "Is empty");
 
-    if (periodicities[0].result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (periodicities[0].result === -1)
+      return sendErrorResponse(res, 500, 301, "Error in database");
 
     return sendSuccesResponse(res, 200, {
       count: periodicitiesCount.count,
@@ -152,13 +150,11 @@ export const updatePeriodicity = async (req, res) => {
     const isValid = (value) => value.trim() !== "";
 
     const idValidate = isValid(idPeriodicity) ? Number(idPeriodicity) : periodicity.id_periodicity;
-    const nameCapitalize = isValid(type_periodicity) ? formatterCapitalize(type_periodicity) : periodicity.type_periodicity;
-    
+    const nameCapitalize = isValid(type_periodicity)
+      ? formatterCapitalize(type_periodicity)
+      : periodicity.type_periodicity;
 
-    const [[[idPeriodicityBD]]] = await updatePeriodicityModel(
-      idValidate,
-      nameCapitalize
-    );
+    const [[[idPeriodicityBD]]] = await updatePeriodicityModel(idValidate, nameCapitalize);
 
     if (!idPeriodicityBD) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -205,7 +201,7 @@ export const getDownloadPeriodicity = async (req, res) => {
 
     const buffer = await workbook.outputAsync();
 
-    res.setHeader("Content-Disposition", "attachment; filename=periodicidad.xlsx");
+    res.setHeader("Content-Disposition", "attachment; filename=Periodicidad.xlsx");
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

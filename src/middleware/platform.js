@@ -4,13 +4,19 @@ import { sendErrorResponse } from "../utils/sendResponse.js";
 export const validateCreatePlatform = [
   check("name_platform")
     .isLength({ min: 2, max: 200 })
-    .withMessage("Must be between 1 and 100 characters")
+    .withMessage("Must be between 1 and 100 characters"),
+  check("website_platform")
+    .isLength({ min: 2, max: 200 })
+    .withMessage("Must be between 1 and 100 characters"),
+  check("entityId").exists().withMessage("Entity id is required")
 ];
 
 export const validateUpdatePlatform = [
   check("idPlatform").exists().withMessage("Platform id is required"),
   check("id_platform").optional(),
-  check("name_platform").optional()
+  check("name_platform").optional(),
+  check("website_platform").optional(),
+  check("entityId").optional()
 ];
 
 export const validatePlatformById = [
@@ -30,10 +36,8 @@ export const validatePlatformAll = [
     .withMessage("Should be an integer between 0 and 1"),
   check("order_by")
     .optional()
-    .isLength({ min: 1, max: 255 })
-    .withMessage("Must be between 1 and 255 characters")
     .custom((value) => {
-      var fields = ["id_platform", "name_platform"];
+      var fields = ["name_platform"];
       if (!fields.includes(value)) throw new Error("Not a valid field");
       else return true;
     })
@@ -42,26 +46,18 @@ export const validatePlatformAll = [
     .optional()
     .custom((value) => {
       if (!value) {
-        throw new Error("Filter is not a valid json");
+        throw new Error("Filter is not a valid");
       }
 
-      const value_a = JSON.parse(value);
-
-      const fields = ["id_platform", "name_platform"];
+      const fields = ["name_platform"];
       const operators = ["=", "!=", ">", "<", ">=", "<=", "LIKE"];
-      if (!(value_a instanceof Array)) throw new Error("Filter should be an array");
-      value_a.forEach((element) => {
-        if (
-          element.field === undefined ||
-          element.operator === undefined ||
-          element.value === undefined
-        )
-          throw new Error(`Not a valid filter: ${JSON.stringify(element)}`);
-        if (!fields.includes(element.field))
-          throw new Error(`Not a valid field: ${JSON.stringify(element)}`);
-        if (!operators.includes(element.operator))
-          throw new Error(`Not a valid operator: ${JSON.stringify(element)}`);
-      });
+
+      if (fields.includes(value)) {
+        throw new Error(`Not a valid field: ${JSON.stringify(value)}`);
+      }
+      if (operators.includes(value)) {
+        throw new Error(`Not a valid operator: ${JSON.stringify(value)}`);
+      }
       return true;
     })
 ];

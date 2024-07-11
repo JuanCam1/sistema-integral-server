@@ -21,10 +21,10 @@ export const createPlatform = async (req, res) => {
     const data = matchedData(req);
     console.log("🚀 ~ createPlatform ~ data:", data);
 
-    const nameSearch = formatterCapitalize(data.name_platform);
-    const [[[platform]]] = await getPlatformIsExistModel(nameSearch);
+    const { name_platform, website_platform, entityId } = data;
+    const nameCapitalize = formatterCapitalize(name_platform);
+    const [[[platform]]] = await getPlatformIsExistModel(nameCapitalize);
 
-    console.log("🚀 ~ createPlatform ~ platform:", platform);
     switch (platform.result) {
       case -1:
         return sendErrorResponse(res, 404, 402, "Platform exists");
@@ -32,9 +32,7 @@ export const createPlatform = async (req, res) => {
         return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
-    const { name_platform } = data;
-    const nameCapitalize = formatterCapitalize(name_platform);
-    const [[[id_platform]]] = await createPlatformModel(nameCapitalize);
+    const [[[id_platform]]] = await createPlatformModel(nameCapitalize, website_platform, entityId);
 
     if (!id_platform) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -49,7 +47,7 @@ export const createPlatform = async (req, res) => {
 
     return sendSuccesResponse(res, 202, data.id_platform);
   } catch (error) {
-    // console.log(error);
+    console.log("🚀 ~ createPlatform ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -86,23 +84,14 @@ export const getPlatformsAll = async (req, res) => {
     res.setHeader("Content-Type", "application/json");
 
     const data = matchedData(req);
-    console.log("🚀 ~ getPlatformsAll ~ data:", data);
 
-    const filter = undefined;
+    let filter = undefined;
     if (data.filter !== undefined) {
-      const filter_a = JSON.parse(data.filter);
-
-      filter_a.forEach(function (element) {
-        if (filter.length === 0)
-          filter = filter + element.field + " " + element.operator + ' "' + element.value + '"';
-        else
-          filter =
-            filter + " AND " + element.field + " " + element.operator + ' "' + element.value + '"';
-      });
+      filter = formatterCapitalize(data.filter);
     }
 
     //Assemble order_by
-    const order_by = undefined;
+    let order_by = undefined;
     if (data.order_by !== undefined) {
       order_by = data.order_by;
     }
@@ -134,8 +123,6 @@ export const getPlatformsAll = async (req, res) => {
       platforms: platforms
     });
   } catch (error) {
-    console.log("🚀 ~ getPlatformsAll ~ error:", error);
-
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -169,7 +156,6 @@ export const removeStatePlatform = async (req, res) => {
   } catch (error) {
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
-  console.log("🚀 ~ removeStatePlatform ~ platform:", platform);
 };
 
 // 👍
@@ -179,7 +165,8 @@ export const updatePlatform = async (req, res) => {
 
     const data = matchedData(req);
 
-    const [[[platform]]] = await getPlatformByIdModel(data.idPlatform);
+    const { idPlatform, name_platform, website_platform, entityId } = data;
+    const [[[platform]]] = await getPlatformByIdModel(idPlatform);
 
     if (!platform) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -190,7 +177,6 @@ export const updatePlatform = async (req, res) => {
         return sendErrorResponse(res, 404, 402, "Platform no exist");
     }
 
-    const { idPlatform, name_platform } = data;
     const isValid = (value) => value.trim() !== "";
 
     const nameCapitalize = isValid(name_platform)
@@ -198,7 +184,12 @@ export const updatePlatform = async (req, res) => {
       : platform.name_platform;
     const idValidate = isValid(idPlatform) ? Number(idPlatform) : platform.id_platform;
 
-    const [[[idPlatformBD]]] = await updatePlatformModel(idValidate, nameCapitalize);
+    const [[[idPlatformBD]]] = await updatePlatformModel(
+      idValidate,
+      nameCapitalize,
+      website_platform,
+      entityId
+    );
 
     if (!idPlatformBD) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -211,7 +202,7 @@ export const updatePlatform = async (req, res) => {
 
     return sendSuccesResponse(res, 202, "Platform update");
   } catch (error) {
-    console.log("🚀 ~ updatePlatform ~ error:", error);
+    // console.log("🚀 ~ updatePlatform ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -249,14 +240,13 @@ export const getDownloadPlatform = async (req, res) => {
 
     const buffer = await workbook.outputAsync();
 
-    res.setHeader("Content-Disposition", "attachment; filename=platformas.xlsx");
+    res.setHeader("Content-Disposition", "attachment; filename=Plataformas.xlsx");
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     res.send(buffer);
   } catch (error) {
-    console.log(error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
