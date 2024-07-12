@@ -12,6 +12,7 @@ import {
 import { formatterCapitalize } from "../utils/capitalize.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import XlsxPopulate from "xlsx-populate";
+import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
 // 👍
 export const createPlatform = async (req, res) => {
@@ -226,16 +227,31 @@ export const getDownloadPlatform = async (req, res) => {
 
     const workbook = await XlsxPopulate.fromBlankAsync();
     const sheet = workbook.sheet(0);
+    sheet.row(1).style("bold", true);
 
     const headers = ["ID", "Nombre Plataforma", "Estado"];
     headers.forEach((header, idx) => {
-      sheet.cell(1, idx + 1).value(header);
+      sheet
+        .cell(1, idx + 1)
+        .value(header)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
+    autoAdjustColumnWidth(sheet);
+
     platforms.forEach((platform, rowIndex) => {
-      sheet.cell(rowIndex + 2, 1).value(platform.id_platform);
-      sheet.cell(rowIndex + 2, 2).value(platform.name_platform);
-      sheet.cell(rowIndex + 2, 3).value(platform.active_platform === 1 ? "Activo" : "Inactivo");
+      sheet
+        .cell(rowIndex + 2, 1)
+        .value(platform.id_platform)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 2)
+        .value(platform.name_platform)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 3)
+        .value(platform.active_platform === 1 ? "Activo" : "Inactivo")
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();

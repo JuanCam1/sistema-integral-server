@@ -11,6 +11,7 @@ import {
 import { formatterCapitalize } from "../utils/capitalize.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import XlsxPopulate from "xlsx-populate";
+import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
 // 👍
 export const createPeriodicity = async (req, res) => {
@@ -188,15 +189,27 @@ export const getDownloadPeriodicity = async (req, res) => {
 
     const workbook = await XlsxPopulate.fromBlankAsync();
     const sheet = workbook.sheet(0);
+    sheet.row(1).style("bold", true);
 
     const headers = ["ID", "Tipo Periodicidad"];
     headers.forEach((header, idx) => {
-      sheet.cell(1, idx + 1).value(header);
+      sheet
+        .cell(1, idx + 1)
+        .value(header)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
+    autoAdjustColumnWidth(sheet);
+
     periodicities.forEach((periodicity, rowIndex) => {
-      sheet.cell(rowIndex + 2, 1).value(periodicity.id_periodicity);
-      sheet.cell(rowIndex + 2, 2).value(periodicity.type_periodicity);
+      sheet
+        .cell(rowIndex + 2, 1)
+        .value(periodicity.id_periodicity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 2)
+        .value(periodicity.type_periodicity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();

@@ -12,6 +12,7 @@ import {
 import { formatterCapitalize } from "../utils/capitalize.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import XlsxPopulate from "xlsx-populate";
+import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
 // 👍
 export const createEntity = async (req, res) => {
@@ -289,19 +290,43 @@ export const getDownloadEntity = async (req, res) => {
 
     const workbook = await XlsxPopulate.fromBlankAsync();
     const sheet = workbook.sheet(0);
+    sheet.row(1).style("bold", true);
 
     const headers = ["ID", "Nombre Entidad", "Dirección", "Telefono", "Correo", "Estado"];
     headers.forEach((header, idx) => {
-      sheet.cell(1, idx + 1).value(header);
+      sheet
+        .cell(1, idx + 1)
+        .value(header)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
+    autoAdjustColumnWidth(sheet);
+
     entities.forEach((entity, rowIndex) => {
-      sheet.cell(rowIndex + 2, 1).value(entity.id_entity);
-      sheet.cell(rowIndex + 2, 2).value(entity.name_entity);
-      sheet.cell(rowIndex + 2, 3).value(entity.address_entity);
-      sheet.cell(rowIndex + 2, 4).value(entity.phone_entity);
-      sheet.cell(rowIndex + 2, 5).value(entity.email_entity);
-      sheet.cell(rowIndex + 2, 6).value(entity.active_entity === 1 ? "Activo" : "Inactivo");
+      sheet
+        .cell(rowIndex + 2, 1)
+        .value(entity.id_entity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 2)
+        .value(entity.name_entity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 3)
+        .value(entity.address_entity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 4)
+        .value(entity.phone_entity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 5)
+        .value(entity.email_entity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 6)
+        .value(entity.active_entity === 1 ? "Activo" : "Inactivo")
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();

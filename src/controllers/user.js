@@ -17,6 +17,7 @@ import XlsxPopulate from "xlsx-populate";
 import path from "path";
 import fs from "fs";
 import { getDownloadAreaModel } from "../models/areas.js";
+import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
 const mimeTypes = {
   ".jpeg": "image/jpeg",
@@ -254,7 +255,7 @@ export const updateUser = async (req, res) => {
     const data = matchedData(req);
     const newPhoto = req?.file?.filename;
 
-    console.log("🚀 ~ updateuser ~ data:", data.profile_user);
+    // console.log("🚀 ~ updateuser ~ data:", data.profile_user);
     const {
       idUser,
       cedula_user,
@@ -370,6 +371,7 @@ export const getDownloadUser = async (req, res) => {
 
     const workbook = await XlsxPopulate.fromBlankAsync();
     const sheet = workbook.sheet(0);
+    sheet.row(1).style("bold", true);
 
     const headers = [
       "Cedula",
@@ -382,18 +384,47 @@ export const getDownloadUser = async (req, res) => {
       "Estado"
     ];
     headers.forEach((header, idx) => {
-      sheet.cell(1, idx + 1).value(header);
+      sheet
+        .cell(1, idx + 1)
+        .value(header)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
+    autoAdjustColumnWidth(sheet);
+
     users.forEach((user, rowIndex) => {
-      sheet.cell(rowIndex + 2, 1).value(user.cedula_user);
-      sheet.cell(rowIndex + 2, 2).value(`${user.names_user} ${user.lastnames} `);
-      sheet.cell(rowIndex + 2, 3).value(user.phone_user);
-      sheet.cell(rowIndex + 2, 4).value(user.email_user);
-      sheet.cell(rowIndex + 2, 5).value(user.position_user);
-      sheet.cell(rowIndex + 2, 6).value(user.profile_user);
-      sheet.cell(rowIndex + 2, 7).value(user.name_area ? user.name_area : "Sin Área");
-      sheet.cell(rowIndex + 2, 8).value(user.state_user === 1 ? "Activo" : "Inactivo");
+      sheet
+        .cell(rowIndex + 2, 1)
+        .value(user.cedula_user)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 2)
+        .value(`${user.names_user} ${user.lastnames} `)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 3)
+        .value(user.phone_user)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 4)
+        .value(user.email_user)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 5)
+        .value(user.position_user)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 6)
+        .value(user.profile_user)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 7)
+        .value(user.name_area ? user.name_area : "Sin Área")
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 8)
+        .value(user.state_user === 1 ? "Activo" : "Inactivo")
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();

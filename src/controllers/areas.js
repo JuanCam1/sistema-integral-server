@@ -12,6 +12,7 @@ import {
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import { formatterCapitalize } from "../utils/capitalize.js";
 import XlsxPopulate from "xlsx-populate";
+import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
 export const createArea = async (req, res) => {
   try {
@@ -22,7 +23,7 @@ export const createArea = async (req, res) => {
     const { name_area, phone_area, flat_area, extension_area, sedeId } = data;
     const nameCapitalize = formatterCapitalize(name_area);
     const flatCapitalize = formatterCapitalize(flat_area);
-    
+
     const [[[area]]] = await getAreaIsExistModel(nameCapitalize);
 
     switch (area.result) {
@@ -31,7 +32,6 @@ export const createArea = async (req, res) => {
       case -2:
         return sendErrorResponse(res, 500, 301, "Error in database");
     }
-
 
     const [[[id_area]]] = await createAreaModel(
       nameCapitalize,
@@ -231,6 +231,7 @@ export const getDownloadArea = async (req, res) => {
 
     const workbook = await XlsxPopulate.fromBlankAsync();
     const sheet = workbook.sheet(0);
+    sheet.row(1).style("bold", true);
 
     const headers = [
       "ID",
@@ -244,19 +245,51 @@ export const getDownloadArea = async (req, res) => {
       "Estado"
     ];
     headers.forEach((header, idx) => {
-      sheet.cell(1, idx + 1).value(header);
+      sheet
+        .cell(1, idx + 1)
+        .value(header)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
+    autoAdjustColumnWidth(sheet);
+
     areas.forEach((area, rowIndex) => {
-      sheet.cell(rowIndex + 2, 1).value(area.id_area);
-      sheet.cell(rowIndex + 2, 2).value(area.name_area);
-      sheet.cell(rowIndex + 2, 3).value(area.name_sede);
-      sheet.cell(rowIndex + 2, 4).value(area.address_sede);
-      sheet.cell(rowIndex + 2, 5).value(area.ubication_sede);
-      sheet.cell(rowIndex + 2, 6).value(area.flat_area);
-      sheet.cell(rowIndex + 2, 7).value(area.phone_area);
-      sheet.cell(rowIndex + 2, 8).value(area.extension_area);
-      sheet.cell(rowIndex + 2, 9).value(area.active_area === 1 ? "Activo" : "Inactivo");
+      sheet
+        .cell(rowIndex + 2, 1)
+        .value(area.id_area)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 2)
+        .value(area.name_area)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 3)
+        .value(area.name_sede)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 4)
+        .value(area.address_sede)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 5)
+        .value(area.ubication_sede)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 6)
+        .value(area.flat_area)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 7)
+        .value(area.phone_area)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 8)
+        .value(area.extension_area)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 9)
+        .value(area.active_area === 1 ? "Activo" : "Inactivo")
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();
