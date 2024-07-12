@@ -11,6 +11,7 @@ import routerSede from "../routes/sede.js";
 import routerPeriodicity from "../routes/periodicity.js";
 import routerEntity from "../routes/entity.js";
 import routerUsers from "../routes/user.js";
+import routerSchedule from "../routes/schedule.js";
 
 //Create app
 const app = express();
@@ -78,5 +79,6 @@ app.use("/platforms", routerPlatforms);
 app.use("/entities", routerEntity);
 app.use("/periodicity", routerPeriodicity);
 app.use("/users", routerUsers);
+app.use("/schedules", routerSchedule);
 
 export default app;
