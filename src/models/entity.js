@@ -4,17 +4,19 @@ export const createEntityModel = async (
   name_entity,
   address_entity,
   phone_entity,
-  email_entity
+  email_entity,
+  createdUser
 ) => {
   name_entity = name_entity ?? "";
   address_entity = address_entity ?? "";
   phone_entity = phone_entity ?? "";
   email_entity = email_entity ?? "";
+  createdUser = createdUser ?? "";
 
-  const values = [name_entity, address_entity, phone_entity, email_entity];
+  const values = [name_entity, address_entity, phone_entity, email_entity, createdUser];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Entity_create(?,?,?,?)", values);
+  const result = await promisePool.query("CALL strp_Entity_create(?,?,?,?,?)", values);
   return result;
 };
 
@@ -31,8 +33,8 @@ export const getEntityByIdModel = async (id_entity) => {
 export const getEntityAllModel = async (limit, offset, orderby, order, filter) => {
   limit = limit ?? "";
   offset = offset ?? "";
-  orderby = orderby ?? "";
-  order = order ?? "";
+  orderby = orderby ?? "id_entity";
+  order = order ?? "DESC";
   filter = filter ?? "";
 
   const values = [limit, offset, orderby, order, filter];
@@ -76,7 +78,7 @@ export const updateEntityModel = async (
   email_entity = email_entity ?? "";
 
   const values = [id_entity, name_entity, address_entity, phone_entity, email_entity];
-
+  console.log(values);
   const promisePool = db.get().promise();
   const result = await promisePool.query("CALL strp_Entity_patch(?,?,?,?,?)", values);
   return result;
@@ -88,7 +90,6 @@ export const countEntityAllModel = (filter) => {
   const promisePool = db.get().promise();
   return promisePool.query("CALL strp_Entity_countAll(?)", values);
 };
-
 
 export const getEntityIsExistModel = async (value, procedure) => {
   value = value ?? "";

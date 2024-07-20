@@ -12,6 +12,8 @@ import routerPeriodicity from "../routes/periodicity.js";
 import routerEntity from "../routes/entity.js";
 import routerUsers from "../routes/user.js";
 import routerSchedule from "../routes/schedule.js";
+import routerReport from "../routes/report.js";
+import routerTotal from "../routes/total.js";
 
 //Create app
 const app = express();
@@ -46,8 +48,8 @@ app.use(function (req, res, next) {
 
 app.use((req, res, next) => {
   console.log("🏈 Solicitud recibida:", req.method, req.url);
+  console.log("🏈 Solicitud recibida:", req.body);
   // console.log('🏈 Solicitud recibida:', req.body, req.headers);
-  // console.log("🏈 Solicitud recibida:", req.body);
   // console.log('🏈 Solicitud recibida:', req.headers);
   next();
 });
@@ -69,10 +71,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// app.use("/uploads/photos", express.static("uploads/photos"));
-
 app.use("/login", routerLogin);
-
 app.use("/areas", routerAreas);
 app.use("/sedes", routerSede);
 app.use("/platforms", routerPlatforms);
@@ -80,5 +79,7 @@ app.use("/entities", routerEntity);
 app.use("/periodicity", routerPeriodicity);
 app.use("/users", routerUsers);
 app.use("/schedules", routerSchedule);
+app.use("/reports", routerReport);
+app.use("/totals", routerTotal);
 
 export default app;

@@ -1,4 +1,5 @@
 import { getScheduleModel } from "../models/schedule.js";
+import { logger } from "../services/apilogger.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 
 export const getSchedule = async (req, res) => {
@@ -20,6 +21,13 @@ export const getSchedule = async (req, res) => {
       schedules
     });
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data.email_user
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };

@@ -14,10 +14,17 @@ import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js"
 import XlsxPopulate from "xlsx-populate";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
-// 👍
 export const createEntity = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+
+    const createUserValid = payload.userIdPayload;
 
     const data = matchedData(req);
 
@@ -39,9 +46,12 @@ export const createEntity = async (req, res) => {
       nameCapitalize,
       addressCapitalize,
       phone_entity,
-      email_entity
+      email_entity,
+      createUserValid
     );
+
     if (!id_entity) return sendErrorResponse(res, 500, 301, "Error in database");
+    
 
     switch (id_entity) {
       case -1:
@@ -58,7 +68,6 @@ export const createEntity = async (req, res) => {
   }
 };
 
-// 👍
 export const getEntityById = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -84,7 +93,6 @@ export const getEntityById = async (req, res) => {
   }
 };
 
-// 👍
 export const getEntityAll = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -132,10 +140,16 @@ export const getEntityAll = async (req, res) => {
   }
 };
 
-// 👍
 export const removeStateEntity = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
 
     const data = matchedData(req);
 
@@ -164,39 +178,17 @@ export const removeStateEntity = async (req, res) => {
   }
 };
 
-export const getEntityTotal = async (req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
-    const [[entities]] = await getDownloadEntityModel(data.state);
-
-    if (!entities) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (entities.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
-        return sendErrorResponse(res, 404, 402, "entities no exist");
-    }
-
-    return sendSuccesResponse(res, 200, {
-      entities: entities
-    });
-  } catch (error) {
-    console.log("🚀 ~ getEntityTotal ~ error:", error);
-    return sendErrorResponse(res, 500, 301, "Error in service or database");
-  }
-};
-
-// 👍
 export const updateEntity = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
 
     const data = matchedData(req);
-    console.log("🚀 ~ updateEntity ~ data:", data);
     const { idEntity, name_entity, address_entity, phone_entity, email_entity } = data;
 
     const [[[entity]]] = await getEntityByIdModel(idEntity);
@@ -241,7 +233,6 @@ export const updateEntity = async (req, res) => {
 
     return sendSuccesResponse(res, 202, "Entity update");
   } catch (error) {
-    console.log("🚀 ~ updateEntity ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -292,7 +283,15 @@ export const getDownloadEntity = async (req, res) => {
     const sheet = workbook.sheet(0);
     sheet.row(1).style("bold", true);
 
-    const headers = ["ID", "Nombre Entidad", "Dirección", "Telefono", "Correo", "Estado"];
+    const headers = [
+      "No.",
+      "Nombre Entidad",
+      "Dirección",
+      "Telefono",
+      "Correo",
+      "Estado",
+    ];
+    // "Creado Por"
     headers.forEach((header, idx) => {
       sheet
         .cell(1, idx + 1)
@@ -327,6 +326,10 @@ export const getDownloadEntity = async (req, res) => {
         .cell(rowIndex + 2, 6)
         .value(entity.active_entity === 1 ? "Activo" : "Inactivo")
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      // sheet
+      //   .cell(rowIndex + 2, 7)
+      //   .value(`${entity.names_user} ${entity.lastnames}`)
+      //   .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();

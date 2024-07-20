@@ -14,15 +14,21 @@ import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js"
 import XlsxPopulate from "xlsx-populate";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
-// 👍
 export const createPlatform = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+
+    const createUserValid = payload.userIdPayload;
 
     const data = matchedData(req);
-    console.log("🚀 ~ createPlatform ~ data:", data);
 
-    const { name_platform, website_platform, entityId } = data;
+    const { name_platform, website_platform, entityId, periodicityId } = data;
     const nameCapitalize = formatterCapitalize(name_platform);
     const [[[platform]]] = await getPlatformIsExistModel(nameCapitalize);
 
@@ -33,11 +39,17 @@ export const createPlatform = async (req, res) => {
         return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
-    const [[[id_platform]]] = await createPlatformModel(nameCapitalize, website_platform, entityId);
+    const [[[id_platform]]] = await createPlatformModel(
+      nameCapitalize,
+      website_platform,
+      entityId,
+      periodicityId,
+      createUserValid
+    );
 
     if (!id_platform) return sendErrorResponse(res, 500, 301, "Error in database");
 
-    switch (id_platform) {
+    switch (id_platform.result) {
       case -1:
         return sendErrorResponse(res, 500, 402, "Error database");
       case -2:
@@ -48,12 +60,10 @@ export const createPlatform = async (req, res) => {
 
     return sendSuccesResponse(res, 202, data.id_platform);
   } catch (error) {
-    console.log("🚀 ~ createPlatform ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
-// 👍
 export const getPlatformById = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -79,7 +89,6 @@ export const getPlatformById = async (req, res) => {
   }
 };
 
-// 👍
 export const getPlatformsAll = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -91,7 +100,6 @@ export const getPlatformsAll = async (req, res) => {
       filter = formatterCapitalize(data.filter);
     }
 
-    //Assemble order_by
     let order_by = undefined;
     if (data.order_by !== undefined) {
       order_by = data.order_by;
@@ -128,10 +136,15 @@ export const getPlatformsAll = async (req, res) => {
   }
 };
 
-// 👍
 export const removeStatePlatform = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
 
     const data = matchedData(req);
 
@@ -159,14 +172,19 @@ export const removeStatePlatform = async (req, res) => {
   }
 };
 
-// 👍
 export const updatePlatform = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
 
     const data = matchedData(req);
 
-    const { idPlatform, name_platform, website_platform, entityId } = data;
+    const { idPlatform, name_platform, website_platform, entityId, periodicityId } = data;
     const [[[platform]]] = await getPlatformByIdModel(idPlatform);
 
     if (!platform) return sendErrorResponse(res, 500, 301, "Error in database");
@@ -183,13 +201,17 @@ export const updatePlatform = async (req, res) => {
     const nameCapitalize = isValid(name_platform)
       ? formatterCapitalize(name_platform)
       : platform.name_platform;
-    const idValidate = isValid(idPlatform) ? Number(idPlatform) : platform.id_platform;
+
+    const websitePlatformValid = website_platform ?? platform.website_platform;
+    const entityValid = entityId ?? platform.entityId;
+    const periodicityValid = periodicityId ?? platform.periodicityId;
 
     const [[[idPlatformBD]]] = await updatePlatformModel(
-      idValidate,
+      idPlatform,
       nameCapitalize,
-      website_platform,
-      entityId
+      websitePlatformValid,
+      entityValid,
+      periodicityValid
     );
 
     if (!idPlatformBD) return sendErrorResponse(res, 500, 301, "Error in database");
@@ -203,7 +225,6 @@ export const updatePlatform = async (req, res) => {
 
     return sendSuccesResponse(res, 202, "Platform update");
   } catch (error) {
-    // console.log("🚀 ~ updatePlatform ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -229,7 +250,8 @@ export const getDownloadPlatform = async (req, res) => {
     const sheet = workbook.sheet(0);
     sheet.row(1).style("bold", true);
 
-    const headers = ["ID", "Nombre Plataforma", "Estado"];
+    const headers = ["ID", "Nombre Plataforma", "Sitio web", "Entidad", "Periodicidad", "Estado"];
+    // ,"Creado Por"
     headers.forEach((header, idx) => {
       sheet
         .cell(1, idx + 1)
@@ -250,8 +272,24 @@ export const getDownloadPlatform = async (req, res) => {
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
       sheet
         .cell(rowIndex + 2, 3)
+        .value(platform.website_platform)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 4)
+        .value(platform.name_entity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 5)
+        .value(platform.type_periodicity)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 6)
         .value(platform.active_platform === 1 ? "Activo" : "Inactivo")
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      // sheet
+      // .cell(rowIndex + 2, 7)
+      // .value(`${platform.names_user} ${platform.lastnames}`)
+      // .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();

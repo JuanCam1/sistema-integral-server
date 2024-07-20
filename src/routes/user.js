@@ -1,17 +1,18 @@
 import { Router } from "express";
 import {
   createUser,
-  getAreasTotal,
   getDownloadUser,
   getImage,
   getUsersAll,
   removeStateUser,
+  updateNavbarUser,
   updateUser
 } from "../controllers/user.js";
 import {
   handleValidationErrors,
   validateCreateUser,
   validateFileNameImage,
+  validateUpdateNavbarUser,
   validateUpdateUser,
   validateUserAll,
   validateUserById,
@@ -35,14 +36,14 @@ const storagePhoto = multer.diskStorage({
 const upload = multer({
   storage: storagePhoto,
   fileFilter: (req, file, cb) => {
-    const fileTypes = /jpeg|jpg|png|gif/;
+    const fileTypes = /jpeg|jpg|png/;
     const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
     const mimeType = fileTypes.test(file.mimetype);
 
     if (extName && mimeType) {
       return cb(null, true);
     } else {
-      cb(new Error("Only images are allowed (jpeg, jpg, png, gif)"));
+      cb(new Error("Only images are allowed (jpeg, jpg, png)"));
     }
   }
 });
@@ -62,7 +63,7 @@ routerUsers.post(
 routerUsers.patch(
   "/updateUser/:idUser",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador","Funcionario","Director"]),
   upload.single("photo_user"),
   validateUserById,
   validateUpdateUser,
@@ -70,10 +71,21 @@ routerUsers.patch(
   updateUser
 );
 
+routerUsers.patch(
+  "/updateNavbarUser/:idUser",
+  ensureJWTAuth,
+  hasType(["Administrador", "Director", "Funcionario"]),
+  upload.single("photo_user"),
+  validateUserById,
+  validateUpdateNavbarUser,
+  handleValidationErrors,
+  updateNavbarUser
+);
+
 routerUsers.post(
   "/getUsersAll",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateUserAll,
   handleValidationErrors,
   getUsersAll
@@ -82,17 +94,10 @@ routerUsers.post(
 routerUsers.get(
   "/getImage/:fileName",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director", "Funcionario"]),
   validateFileNameImage,
   handleValidationErrors,
   getImage
-);
-
-routerUsers.get(
-  "/getAreasTotal",
-  ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
-  getAreasTotal
 );
 
 routerUsers.get(
@@ -104,19 +109,10 @@ routerUsers.get(
   removeStateUser
 );
 
-// routerUsers.get(
-//   "/getAreaById/:idArea",
-//   ensureJWTAuth,
-//   hasType(["Administrador", "Director", "Gestor"]),
-//   validateUserById,
-//   handleValidationErrors,
-//   getAreaById
-// );
-
 routerUsers.get(
   "/getDownloadUser/:state",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director", "Funcionario"]),
   validateUserState,
   handleValidationErrors,
   getDownloadUser

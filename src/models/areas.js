@@ -1,24 +1,32 @@
 import { db } from "../../db/db.js";
 
-export const createAreaModel = async (name_area, phone_area, extension_area, flat_area, sedeId) => {
+export const createAreaModel = async (
+  name_area,
+  phone_area,
+  extension_area,
+  flat_area,
+  sedeId,
+  createdUser
+) => {
   name_area = name_area ?? "";
   phone_area = phone_area ?? "";
   extension_area = extension_area ?? "";
   flat_area = flat_area ?? "";
   sedeId = sedeId ?? "";
+  createdUser = createdUser ?? "";
 
-  const values = [name_area, phone_area, extension_area, flat_area, sedeId];
+  const values = [name_area, phone_area, extension_area, flat_area, sedeId, createdUser];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Area_create(?,?,?,?,?)", values);
+  const result = await promisePool.query("CALL strp_Area_create(?,?,?,?,?,?)", values);
   return result;
 };
 
 export const getAreasAllModel = async (limit, offset, orderby, order, filter) => {
   limit = limit ?? "";
   offset = offset ?? "";
-  orderby = orderby ?? "";
-  order = order ?? "";
+  orderby = orderby ?? "id_area";
+  order = order ?? "DESC";
   filter = filter ?? "";
 
   const values = [limit, offset, orderby, order, filter];

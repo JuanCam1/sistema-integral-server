@@ -9,8 +9,8 @@ export const validateUser = [
     .withMessage("Should be a valid email")
     .trim(),
   check("password_user")
-    .isLength({ min: 6, max: 80 })
-    .withMessage("Must be between 6 and 80 characters")
+    .isLength({ min: 4, max: 80 })
+    .withMessage("Must be between 4 and 80 characters")
     .trim()
 ];
 

@@ -8,7 +8,8 @@ export const validateCreatePlatform = [
   check("website_platform")
     .isLength({ min: 2, max: 200 })
     .withMessage("Must be between 1 and 100 characters"),
-  check("entityId").exists().withMessage("Entity id is required")
+  check("entityId").exists().withMessage("Entity id is required"),
+  check("periodicityId").exists().withMessage("Periodicity id is required"),
 ];
 
 export const validateUpdatePlatform = [
@@ -16,7 +17,8 @@ export const validateUpdatePlatform = [
   check("id_platform").optional(),
   check("name_platform").optional(),
   check("website_platform").optional(),
-  check("entityId").optional()
+  check("entityId").optional(),
+  check("periodicityId").optional()
 ];
 
 export const validatePlatformById = [
@@ -64,7 +66,7 @@ export const validatePlatformAll = [
 
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
-  console.log("🚀 ~ handleValidationErrors ~ errors:", errors);
+  // console.log("🚀 ~ handleValidationErrors ~ errors:", errors);
 
   if (!errors.isEmpty()) return sendErrorResponse(res, 400, 201, "Request has invalid data");
   next();

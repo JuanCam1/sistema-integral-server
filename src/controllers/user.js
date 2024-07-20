@@ -1,5 +1,4 @@
 import { matchedData } from "express-validator";
-import * as bcryptjs from "bcryptjs";
 import {
   countAllUsersModel,
   createUserModel,
@@ -16,7 +15,6 @@ import { hashPassword } from "../utils/hashPassword.js";
 import XlsxPopulate from "xlsx-populate";
 import path from "path";
 import fs from "fs";
-import { getDownloadAreaModel } from "../models/areas.js";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
 const mimeTypes = {
@@ -47,35 +45,21 @@ export const getImage = async (req, res) => {
   });
 };
 
-export const getAreasTotal = async (req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/json");
-
-    const [[areas]] = await getDownloadAreaModel("1");
-
-    if (!areas) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (areas.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
-        return sendErrorResponse(res, 404, 402, "Areas no exist");
-    }
-
-    return sendSuccesResponse(res, 200, {
-      areas: areas
-    });
-  } catch (error) {
-    return sendErrorResponse(res, 500, 301, "Error in service or database");
-  }
-};
-
 export const createUser = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    console.log("🚀 ~ createUser ~ payload:", payload);
+
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+
+    const createUserValid = payload.userIdPayload;
+    console.log("🚀 ~ createUser ~ createUserValid:", createUserValid);
 
     const data = matchedData(req);
-    console.log("🚀 ~ createUser ~ data:", data);
 
     const {
       cedula_user,
@@ -105,7 +89,6 @@ export const createUser = async (req, res) => {
     }
 
     const hashedPassword = await hashPassword(password_user);
-
     const photo = req?.file?.filename ?? "sinphoto.jpg";
 
     const [[[idUser]]] = await createUserModel(
@@ -118,7 +101,8 @@ export const createUser = async (req, res) => {
       pisitionCapitalize,
       photo,
       profileCapitalize,
-      areaId
+      areaId,
+      createUserValid
     );
 
     if (!idUser) return sendErrorResponse(res, 500, 301, "Error in database");
@@ -134,7 +118,110 @@ export const createUser = async (req, res) => {
 
     return sendSuccesResponse(res, 202, idUser);
   } catch (error) {
-    console.log("🚀 ~ createUser ~ error:", error);
+    // console.log("🚀 ~ createUser ~ error:", error);
+    return sendErrorResponse(res, 500, 301, "Error in service or database");
+  }
+};
+
+export const updateUser = async (req, res) => {
+  try {
+    res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    const data = matchedData(req);
+    const newPhoto = req?.file?.filename;
+
+    const {
+      idUser,
+      cedula_user,
+      names_user,
+      lastnames,
+      phone_user,
+      email_user,
+      password_user,
+      position_user,
+      profile_user,
+      areaId
+    } = data;
+
+    const [[[user]]] = await getUserByIdModel(idUser);
+    console.log("🚀 ~ updateUser ~ user:", user);
+
+    if (!user) return sendErrorResponse(res, 500, 301, "Error in database");
+
+    switch (user.result) {
+      case -1:
+        return sendErrorResponse(res, 500, 301, "Error in database");
+      case -2:
+        return sendErrorResponse(res, 404, 402, "User no exist");
+    }
+
+    const isValid = (value) => value.trim() !== "" || value !== undefined || value !== null;
+
+    const idValidate = isValid(idUser) ? Number(idUser) : user.id_user;
+    const cedulaValidate = isValid(cedula_user) ? cedula_user : user.cedula_user;
+    const nameCapitalize = isValid(names_user) ? formatterCapitalize(names_user) : user.names_user;
+    const lastnamesCapitalize = isValid(lastnames)
+      ? formatterCapitalize(lastnames)
+      : user.lastnames;
+    const phoneValidate = isValid(phone_user) ? phone_user : user.phone_user;
+    const emailValidate = isValid(email_user) ? email_user : user.email_user;
+
+    const positionValidate = isValid(position_user) ? position_user : user.position_user;
+    const profileValidate = isValid(profile_user) ? profile_user : user.profile_user;
+
+    const areaValid = areaId ? Number(areaId) : user.id_area;
+
+    let hashedPassword;
+    if (password_user.length > 0) {
+      if (password_user !== undefined) {
+        hashedPassword = await hashPassword(password_user);
+      } else {
+        hashPassword = user.password_user;
+      }
+    }
+
+    if (user.photo_user !== "sinphoto.jpg") {
+      if (newPhoto && user.photo_user) {
+        fs.unlink(path.join(process.cwd(), "uploads/photos", user.photo_user), (err) => {
+          if (err) {
+            console.error("Error deleting old image:", err);
+            return res.status(500).json({ error: "Error deleting old image" });
+          }
+        });
+      }
+    }
+
+    const photo = newPhoto || user.photo_user;
+    // console.log("🚀 ~ updateUser ~ photo:", photo);
+
+    const [[[idUserDb]]] = await updateUserModel(
+      idValidate,
+      cedulaValidate,
+      nameCapitalize,
+      lastnamesCapitalize,
+      phoneValidate,
+      emailValidate,
+      hashedPassword,
+      positionValidate,
+      photo,
+      profileValidate,
+      areaValid,
+      user.id_createdby
+    );
+    // console.log("🚀 ~ updateArea ~ idUserDb:", idUserDb);
+
+    if (!idUserDb) return sendErrorResponse(res, 500, 301, "Error in database");
+
+    switch (idUserDb.result) {
+      case -1:
+        return sendErrorResponse(res, 500, 402, "Error database");
+      case -10:
+        return sendErrorResponse(res, 500, 301, "User no exist");
+    }
+
+    return sendSuccesResponse(res, 202, "user update");
+  } catch (error) {
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -198,6 +285,13 @@ export const removeStateUser = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
 
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+
     const data = matchedData(req);
 
     const [[[user]]] = await getUserByIdModel(data.idUser);
@@ -223,55 +317,18 @@ export const removeStateUser = async (req, res) => {
   }
 };
 
-// export const getAreaById = async (req, res) => {
-//   try {
-//     res.setHeader("Content-Type", "application/json");
-
-//     const data = matchedData(req);
-
-//     const [[[area]]] = await getAreaByIdModel(data.idArea);
-
-//     if (!area) return sendErrorResponse(res, 500, 301, "Error in database");
-
-//     switch (area.result) {
-//       case -1:
-//         return sendErrorResponse(res, 500, 301, "Error in database");
-//       case -2:
-//         return sendErrorResponse(res, 404, 402, "Area no exist");
-//     }
-
-//     return sendSuccesResponse(res, 200, {
-//       area
-//     });
-//   } catch (error) {
-//     return sendErrorResponse(res, 500, 301, "Error in service or database");
-//   }
-// };
-
-export const updateUser = async (req, res) => {
+export const updateNavbarUser = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+
 
     const data = matchedData(req);
     const newPhoto = req?.file?.filename;
 
     // console.log("🚀 ~ updateuser ~ data:", data.profile_user);
-    const {
-      idUser,
-      cedula_user,
-      names_user,
-      lastnames,
-      phone_user,
-      email_user,
-      password_user,
-      position_user,
-      profile_user,
-      areaId
-    } = data;
+    const { id_user, email_user, password_user } = data;
 
-    const [[[user]]] = await getUserByIdModel(idUser);
-    // console.log("🚀 ~ updateUser ~ user:", user);
-    // console.log("🚀 ~ updateuser ~ user:", user.profile_user);
+    const [[[user]]] = await getUserByIdModel(id_user);
 
     if (!user) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -282,57 +339,43 @@ export const updateUser = async (req, res) => {
         return sendErrorResponse(res, 404, 402, "User no exist");
     }
 
-    const isValid = (value) => value.trim() !== "" || value !== undefined || value !== null;
-
-    const idValidate = isValid(idUser) ? Number(idUser) : user.id_user;
-    const cedulaValidate = isValid(cedula_user) ? cedula_user : user.cedula_user;
-    const nameCapitalize = isValid(names_user) ? formatterCapitalize(names_user) : user.names_user;
-    const lastnamesCapitalize = isValid(lastnames)
-      ? formatterCapitalize(lastnames)
-      : user.lastnames;
-    const phoneValidate = isValid(phone_user) ? phone_user : user.phone_user;
-    const emailValidate = isValid(email_user) ? email_user : user.email_user;
-
-    const positionValidate = isValid(position_user) ? position_user : user.position_user;
-    const profileValidate = isValid(profile_user) ? profile_user : user.profile_user;
-
-    const areaValid = areaId ? Number(areaId) : user.id_area;
-
     let hashedPassword;
-    if (password_user.length === 0) {
-      if (password_user !== undefined) {
-        hashedPassword = await hashPassword(password_user);
-      } else {
-        hashPassword = user.password_user;
-      }
+    if (password_user && password_user.length > 0) {
+      hashedPassword = await hashPassword(password_user);
+    } else {
+      hashedPassword = user.password_user;
     }
 
-    if (user.photo_user !== "sinphoto.jpg") {
-      if (newPhoto && user.photo_user) {
+    let photo;
+    if (newPhoto) {
+      if (user.photo_user !== "sinphoto.jpg") {
         fs.unlink(path.join(process.cwd(), "uploads/photos", user.photo_user), (err) => {
           if (err) {
             console.error("Error deleting old image:", err);
             return res.status(500).json({ error: "Error deleting old image" });
           }
         });
+        photo = newPhoto;
+      }else{
+        photo = newPhoto;
       }
+    } else {
+      photo = user.photo_user;
     }
 
-    const photo = newPhoto || user.photo_user;
-    // console.log("🚀 ~ updateUser ~ photo:", photo);
-
     const [[[idUserDb]]] = await updateUserModel(
-      idValidate,
-      cedulaValidate,
-      nameCapitalize,
-      lastnamesCapitalize,
-      phoneValidate,
-      emailValidate,
+      id_user,
+      user.cedula_user,
+      user.names_user,
+      user.lastnames,
+      user.phone_user,
+      email_user,
       hashedPassword,
-      positionValidate,
-      profileValidate,
+      user.position_user,
       photo,
-      areaValid
+      user.profile_user,
+      user.id_area,
+      user.id_createdby
     );
     // console.log("🚀 ~ updateArea ~ idUserDb:", idUserDb);
 
@@ -347,7 +390,7 @@ export const updateUser = async (req, res) => {
 
     return sendSuccesResponse(res, 202, "user update");
   } catch (error) {
-    // console.log("🚀 ~ updateUser ~ error:", error);
+    console.log("🚀 ~ updateUser ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -381,7 +424,8 @@ export const getDownloadUser = async (req, res) => {
       "Cargo",
       "Perfil",
       "Área",
-      "Estado"
+      "Estado",
+      "Creado Por"
     ];
     headers.forEach((header, idx) => {
       sheet
@@ -393,6 +437,7 @@ export const getDownloadUser = async (req, res) => {
     autoAdjustColumnWidth(sheet);
 
     users.forEach((user, rowIndex) => {
+      const name = `${user.name_createdby} ${user.lastanames_createdby}`;
       sheet
         .cell(rowIndex + 2, 1)
         .value(user.cedula_user)
@@ -424,6 +469,10 @@ export const getDownloadUser = async (req, res) => {
       sheet
         .cell(rowIndex + 2, 8)
         .value(user.state_user === 1 ? "Activo" : "Inactivo")
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 9)
+        .value(user.name_createdby ? name : "Administrador")
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 

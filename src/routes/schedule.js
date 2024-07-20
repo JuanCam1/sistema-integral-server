@@ -8,7 +8,7 @@ const routerSchedule = Router();
 routerSchedule.get(
   "/getSchedule",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director", "Funcionario"]),
   getSchedule
 );
 

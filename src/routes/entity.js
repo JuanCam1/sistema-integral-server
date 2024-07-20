@@ -2,10 +2,8 @@ import { Router } from "express";
 import {
   createEntity,
   getDownloadEntity,
-  getEntitiesTotal,
   getEntityAll,
   getEntityById,
-  getEntityTotal,
   removeStateEntity,
   updateEntity
 } from "../controllers/entity.js";
@@ -77,13 +75,5 @@ routerEntity.get(
   getDownloadEntity
 );
 
-routerEntity.get(
-  "/getEntitysTotal/:state",
-  ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
-  validateEntityState,
-  handleValidationErrors,
-  getEntityTotal
-);
 
 export default routerEntity;

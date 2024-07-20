@@ -12,13 +12,21 @@ import { formatterCapitalize } from "../utils/capitalize.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import XlsxPopulate from "xlsx-populate";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
+import { logger } from "../services/apilogger.js";
 
-// 👍
 export const createPeriodicity = async (req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/json");
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
 
-    const data = matchedData(req);
+  if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+
+  const createUserValid = payload.userIdPayload;
+  const data = matchedData(req);
+
+  try {
     const { type_periodicity } = data;
 
     const nameSearch = formatterCapitalize(type_periodicity);
@@ -33,11 +41,11 @@ export const createPeriodicity = async (req, res) => {
 
     const nameCapitalize = formatterCapitalize(type_periodicity);
 
-    const [[[id_periodicity]]] = await createPeriodicityModel(nameCapitalize);
+    const [[[id_periodicity]]] = await createPeriodicityModel(nameCapitalize, createUserValid);
 
     if (!id_periodicity) return sendErrorResponse(res, 500, 301, "Error in database");
 
-    switch (id_periodicity) {
+    switch (id_periodicity.result) {
       case -1:
         return sendErrorResponse(res, 500, 402, "Error database");
       case -2:
@@ -52,7 +60,6 @@ export const createPeriodicity = async (req, res) => {
   }
 };
 
-// 👍
 export const getPeriodicityById = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -78,7 +85,6 @@ export const getPeriodicityById = async (req, res) => {
   }
 };
 
-// 👍
 export const getPeriodicityAll = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -90,7 +96,6 @@ export const getPeriodicityAll = async (req, res) => {
       filter = formatterCapitalize(data.filter);
     }
 
-    //Assemble order_by
     let order_by = undefined;
     if (data.order_by !== undefined) {
       order_by = data.order_by;
@@ -120,19 +125,39 @@ export const getPeriodicityAll = async (req, res) => {
     if (periodicities[0].result === -1)
       return sendErrorResponse(res, 500, 301, "Error in database");
 
+    // loggerAdmin.info(
+    //   `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+    //     req.params
+    //   )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+    //     data.email_user
+    //   )}","user":"${user.names_user}"}`
+    // );
+
     return sendSuccesResponse(res, 200, {
       count: periodicitiesCount.count,
       periodicities: periodicities
     });
   } catch (error) {
+    // logger.error(
+    //   `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+    //     req.params
+    //   )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+    //     data
+    //   )}", "error":"${error}"}`
+    // );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
-// 👍
 export const updatePeriodicity = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
 
     const data = matchedData(req);
 
@@ -192,6 +217,7 @@ export const getDownloadPeriodicity = async (req, res) => {
     sheet.row(1).style("bold", true);
 
     const headers = ["ID", "Tipo Periodicidad"];
+    // const headers = ["ID", "Tipo Periodicidad", "Creado Por"];
     headers.forEach((header, idx) => {
       sheet
         .cell(1, idx + 1)
@@ -210,6 +236,10 @@ export const getDownloadPeriodicity = async (req, res) => {
         .cell(rowIndex + 2, 2)
         .value(periodicity.type_periodicity)
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      // sheet
+      //   .cell(rowIndex + 2, 3)
+      //   .value(`${periodicity.names_user} ${periodicity.lastnames}`)
+      //   .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();

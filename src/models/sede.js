@@ -1,14 +1,15 @@
 import { db } from "../../db/db.js";
 
-export const createSedeModel = async (name_sede,address_sede,ubication_sede) => {
+export const createSedeModel = async (name_sede, address_sede, ubication_sede, createdUser) => {
   name_sede = name_sede ?? "";
   address_sede = address_sede ?? "";
   ubication_sede = ubication_sede ?? "";
+  createdUser = createdUser ?? "";
 
-  const values = [name_sede,address_sede,ubication_sede];
+  const values = [name_sede, address_sede, ubication_sede, createdUser];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Sede_create(?,?,?)", values);
+  const result = await promisePool.query("CALL strp_Sede_create(?,?,?,?)", values);
   return result;
 };
 
@@ -25,8 +26,8 @@ export const getSedeByIdModel = async (id_sede) => {
 export const getSedeAllModel = async (limit, offset, orderby, order, filter) => {
   limit = limit ?? "";
   offset = offset ?? "";
-  orderby = orderby ?? "";
-  order = order ?? "";
+  orderby = orderby ?? "id_sede";
+  order = order ?? "DESC";
   filter = filter ?? "";
 
   const values = [limit, offset, orderby, order, filter];
@@ -56,13 +57,13 @@ export const removeStateSedeModel = async (id_sede) => {
   return result;
 };
 
-export const updateSedeModel =  async (id_sede,name_sede,address_sede,ubication_sede) => {
+export const updateSedeModel = async (id_sede, name_sede, address_sede, ubication_sede) => {
   id_sede = id_sede ?? "";
   name_sede = name_sede ?? "";
   address_sede = address_sede ?? "";
   ubication_sede = ubication_sede ?? "";
 
-  const values = [id_sede,name_sede,address_sede,ubication_sede];
+  const values = [id_sede, name_sede, address_sede, ubication_sede];
 
   const promisePool = db.get().promise();
   const result = await promisePool.query("CALL strp_Sede_patch(?,?,?,?)", values);

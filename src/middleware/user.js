@@ -41,6 +41,13 @@ export const validateUpdateUser = [
   check("areaId").optional()
 ];
 
+export const validateUpdateNavbarUser = [
+  check("idUser").exists("User id is required"),
+  check("id_user").optional(),
+  check("email_user").optional(),
+  check("password_user").optional()
+];
+
 export const validateFileNameImage = [
   check("fileName").exists().withMessage("File name is required")
 ];

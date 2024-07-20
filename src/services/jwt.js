@@ -4,13 +4,13 @@ import { config } from "../../config.js";
 import { sendErrorResponse } from "../utils/sendResponse.js";
 
 export function createToken(user) {
-  //Handle payload
   const payload = {
     user_id: user.id_user,
     names_user: user.names_user,
     lastname: user.lastname,
     email_user: user.email_user,
     profile_user: user.profile_user,
+    photo_user: user.photo_user,
     exp: moment().add(20, "days").unix()
   };
   // exp: moment().add(1, "hours").unix()
@@ -25,9 +25,12 @@ export function createToken(user) {
       payload: {
         user_id: user.id_user,
         names_user: user.names_user,
-        lastname: user.lastname,
+        lastname: user.lastnames,
         email_user: user.email_user,
-        profile_user: user.profile_user
+        profile_user: user.profile_user,
+        areaId: user.areaId,
+        state_user: user.state_user,
+        photo_user: user.photo_user
       }
     }
   };
@@ -56,6 +59,7 @@ export function createEmailConfirmationToken(userId, email) {
 
 export function ensureJWTAuth(req, res, next) {
   res.setHeader("Content-Type", "application/json");
+
   if (!req.headers.authorization) {
     return sendErrorResponse(res, 403, 101, "Request is missing authorization header");
   }

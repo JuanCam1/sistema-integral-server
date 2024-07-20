@@ -16,7 +16,7 @@ export const validateCreateArea = [
     .optional()
     .isLength({ min: 1, max: 45 })
     .withMessage("Must be between 1 and 45 characters"),
-  check("sedeId").isLength({ min: 1, max: 45 }).withMessage("Must be between 1 and 45 characters")
+  check("sedeId").isLength({ min: 1, max: 45 }).withMessage("Must be between 1 and 45 characters"),
 ];
 
 export const validateUpdateArea = [

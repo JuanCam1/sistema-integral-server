@@ -4,7 +4,7 @@ import { sendErrorResponse } from "../utils/sendResponse.js";
 export const validateCreatePeriodicity = [
   check("type_periodicity")
     .isLength({ min: 2, max: 200 })
-    .withMessage("Must be between 2 and 200 characters")
+    .withMessage("Must be between 2 and 200 characters"),
 ];
 
 export const validateUpdatePeriodicity = [
@@ -54,7 +54,6 @@ export const validatePeriodicityAll = [
 
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
-  // console.log("🚀 ~ handleValidationErrors ~ errors:", errors);
 
   if (!errors.isEmpty()) return sendErrorResponse(res, 400, 201, "Request has invalid data");
   next();

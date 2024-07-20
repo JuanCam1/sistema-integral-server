@@ -15,7 +15,7 @@ export const validateCreateEntity = [
     .withMessage("Must be between 2 and 200 characters"),
   check("email_entity")
     .isLength({ min: 2, max: 200 })
-    .withMessage("Must be between 2 and 200 characters")
+    .withMessage("Must be between 2 and 200 characters"),
 ];
 
 export const validateUpdateEntity = [

@@ -4,7 +4,7 @@ import {
   getDownloadPeriodicity,
   getPeriodicityAll,
   getPeriodicityById,
-  updatePeriodicity
+  updatePeriodicity,
 } from "../controllers/periodicity.js";
 import {
   handleValidationErrors,
@@ -61,5 +61,6 @@ routerPeriodicity.get(
   hasType(["Administrador", "Director", "Gestor"]),
   getDownloadPeriodicity
 );
+
 
 export default routerPeriodicity;

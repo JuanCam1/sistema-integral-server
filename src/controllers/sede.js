@@ -14,14 +14,22 @@ import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js"
 import XlsxPopulate from "xlsx-populate";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 
-// 👍
 export const createSede = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+
+    const createUserValid = payload.userIdPayload;
 
     const data = matchedData(req);
 
-    const nameSearch = formatterCapitalize(data.name_sede);
+    const { name_sede, address_sede, ubication_sede } = data;
+    const nameSearch = formatterCapitalize(name_sede);
     const [[[sede]]] = await getSedeIsExistModel(nameSearch);
 
     switch (sede.result) {
@@ -31,7 +39,6 @@ export const createSede = async (req, res) => {
         return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
-    const { name_sede, address_sede, ubication_sede } = data;
     const nameCapitalize = formatterCapitalize(name_sede);
     const addressCapitalize = formatterCapitalize(address_sede);
     const ubicationCapitalize = formatterCapitalize(ubication_sede);
@@ -39,7 +46,8 @@ export const createSede = async (req, res) => {
     const [[[id_sede]]] = await createSedeModel(
       nameCapitalize,
       addressCapitalize,
-      ubicationCapitalize
+      ubicationCapitalize,
+      createUserValid
     );
 
     if (!id_sede) return sendErrorResponse(res, 500, 301, "Error in database");
@@ -59,7 +67,6 @@ export const createSede = async (req, res) => {
   }
 };
 
-// 👍
 export const getSedeById = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -85,29 +92,23 @@ export const getSedeById = async (req, res) => {
   }
 };
 
-// 👍
 export const getSedeAll = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
 
     const data = matchedData(req);
-    console.log("🚀 ~ getSedeAll ~ data:", data);
 
     let filter = undefined;
     if (data.filter !== undefined) {
       filter = formatterCapitalize(data.filter);
     }
 
-    //Assemble order_by
     let order_by = undefined;
     if (data.order_by !== undefined) {
       order_by = data.order_by;
     }
 
-    console.log("🏈", filter);
-
     const [[[sedesCount]]] = await countSedeAllModel(filter);
-    console.log("🚀 ~ getSedeAll ~ sedesCount:", sedesCount);
 
     if (!sedesCount) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -128,15 +129,20 @@ export const getSedeAll = async (req, res) => {
       sedes: sedes
     });
   } catch (error) {
-    console.log("🚀 ~ getSedeAll ~ error:", error);
+    // console.log("🚀 ~ getSedeAll ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
-// 👍
 export const removeStateSede = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
 
     const data = matchedData(req);
 
@@ -159,18 +165,21 @@ export const removeStateSede = async (req, res) => {
 
     return sendSuccesResponse(res, 200, "update state");
   } catch (error) {
-    console.log("🚀 ~ removeStateSede ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
-// 👍
 export const updateSede = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
 
     const data = matchedData(req);
-
     const [[[sede]]] = await getSedeByIdModel(data.idSede);
 
     if (!sede) return sendErrorResponse(res, 500, 301, "Error in database");
@@ -217,32 +226,6 @@ export const updateSede = async (req, res) => {
   }
 };
 
-export const getSedesTotal = async (req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
-    // Trae todas las sedes dependiendo su estado
-    const [[sedes]] = await getDownloadSedeModel(data.state);
-
-    if (!sedes) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (sedes.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
-        return sendErrorResponse(res, 404, 402, "Sedes no exist");
-    }
-
-    return sendSuccesResponse(res, 200, {
-      sedes: sedes
-    });
-  } catch (error) {
-    return sendErrorResponse(res, 500, 301, "Error in service or database");
-  }
-};
-
 export const getDownloadSede = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
@@ -265,6 +248,7 @@ export const getDownloadSede = async (req, res) => {
     sheet.row(1).style("bold", true);
 
     const headers = ["ID", "Nombre Sede", "Dirección", "Ubicación", "Estado"];
+    // , "Creado Por"
     headers.forEach((header, idx) => {
       sheet
         .cell(1, idx + 1)
@@ -295,11 +279,15 @@ export const getDownloadSede = async (req, res) => {
         .cell(rowIndex + 2, 5)
         .value(sede.active_sede === 1 ? "Activo" : "Inactivo")
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      // sheet
+      //   .cell(rowIndex + 2, 6)
+      //   .value(`${sede.names_user} ${sede.lastnames}`)
+      //   .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();
 
-    res.setHeader("Content-Disposition", "attachment; filename=sedes.xlsx");
+    res.setHeader("Content-Disposition", "attachment; filename=Sedes.xlsx");
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

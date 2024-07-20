@@ -17,6 +17,14 @@ import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 export const createArea = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+
+    const createUserValid = payload.userIdPayload;
 
     const data = matchedData(req);
 
@@ -38,7 +46,8 @@ export const createArea = async (req, res) => {
       phone_area,
       extension_area,
       flatCapitalize,
-      sedeId
+      sedeId,
+      createUserValid
     );
 
     if (!id_area) return sendErrorResponse(res, 500, 301, "Error in database");
@@ -70,7 +79,6 @@ export const getAreasAll = async (req, res) => {
       filter = formatterCapitalize(data.filter);
     }
 
-    //Assemble order_by
     let order_by = undefined;
     if (data.order_by !== undefined) {
       order_by = data.order_by;
@@ -97,7 +105,6 @@ export const getAreasAll = async (req, res) => {
       areas: areas
     });
   } catch (error) {
-    console.log("🚀 ~ getAreasAll ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -123,14 +130,20 @@ export const getAreaById = async (req, res) => {
       area
     });
   } catch (error) {
-    console.log("🚀 ~ getAreaById ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const removeStateArea = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
+
+  if (payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+
   try {
-    res.setHeader("Content-Type", "application/json");
 
     const data = matchedData(req);
 
@@ -160,13 +173,17 @@ export const removeStateArea = async (req, res) => {
 export const updateArea = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
-
     const data = matchedData(req);
-    // console.log("🚀 ~ updateArea ~ data:", data);
+    const dataHeader = req.header("X-User-Data");
+    const payload = JSON.parse(dataHeader);
+    
+    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+
     const { idArea, name_area, phone_area, extension_area, flat_area, sedeId } = data;
 
     const [[[area]]] = await getAreaByIdModel(idArea);
-    // console.log("🚀 ~ updateArea ~ area:", area);
 
     if (!area) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -194,7 +211,6 @@ export const updateArea = async (req, res) => {
       flatCapitalize,
       sedeCapitalize
     );
-    console.log("🚀 ~ updateArea ~ idAreaBD:", idAreaBD);
 
     if (!idAreaBD) return sendErrorResponse(res, 500, 301, "Error in database");
 
@@ -207,7 +223,6 @@ export const updateArea = async (req, res) => {
 
     return sendSuccesResponse(res, 202, "area update");
   } catch (error) {
-    console.log("🚀 ~ updateArea ~ error:", error);
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -236,14 +251,15 @@ export const getDownloadArea = async (req, res) => {
     const headers = [
       "ID",
       "Nombre Area",
-      "Sede",
-      "Dirección",
-      "Ubicación",
-      "Piso",
+      "Piso ",
       "Telefono",
       "Extensión",
+      "Sede",
+      "Dirección Sede",
+      "Ubicación Sede",
       "Estado"
     ];
+    // "Creado Por"
     headers.forEach((header, idx) => {
       sheet
         .cell(1, idx + 1)
@@ -264,32 +280,37 @@ export const getDownloadArea = async (req, res) => {
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
       sheet
         .cell(rowIndex + 2, 3)
-        .value(area.name_sede)
-        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
-      sheet
-        .cell(rowIndex + 2, 4)
-        .value(area.address_sede)
-        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
-      sheet
-        .cell(rowIndex + 2, 5)
-        .value(area.ubication_sede)
-        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
-      sheet
-        .cell(rowIndex + 2, 6)
         .value(area.flat_area)
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
       sheet
-        .cell(rowIndex + 2, 7)
+        .cell(rowIndex + 2, 4)
         .value(area.phone_area)
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
       sheet
-        .cell(rowIndex + 2, 8)
+        .cell(rowIndex + 2, 5)
         .value(area.extension_area)
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 6)
+        .value(area.name_sede)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 7)
+        .value(area.address_sede)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      sheet
+        .cell(rowIndex + 2, 8)
+        .value(area.ubication_sede)
+        .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+
       sheet
         .cell(rowIndex + 2, 9)
         .value(area.active_area === 1 ? "Activo" : "Inactivo")
         .style({ horizontalAlignment: "center", verticalAlignment: "center" });
+      // sheet
+      //   .cell(rowIndex + 2, 10)
+      //   .value(`${area.names_user} ${area.lastnames}`)
+      //   .style({ horizontalAlignment: "center", verticalAlignment: "center" });
     });
 
     const buffer = await workbook.outputAsync();

@@ -10,7 +10,7 @@ export const validateCreateSede = [
     .withMessage("Must be between 2 and 200 characters"),
   check("ubication_sede")
     .isLength({ min: 2, max: 200 })
-    .withMessage("Must be between 2 and 200 characters")
+    .withMessage("Must be between 2 and 200 characters"),
 ];
 
 export const validateUpdateSede = [
@@ -43,7 +43,6 @@ export const validateSedeAll = [
   check("filter")
     .optional()
     .custom((value) => {
-
       if (!value) {
         throw new Error("Filter is not a valid ");
       }

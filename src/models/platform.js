@@ -1,14 +1,22 @@
 import { db } from "../../db/db.js";
 
-export const createPlatformModel = async (name_platform, website_platform, sedeId) => {
+export const createPlatformModel = async (
+  name_platform,
+  website_platform,
+  sedeId,
+  periodicityId,
+  createdUser
+) => {
   name_platform = name_platform ?? "";
   website_platform = website_platform ?? "";
   sedeId = sedeId ?? "";
+  periodicityId = periodicityId ?? "";
+  createdUser = createdUser ?? "";
 
-  const values = [name_platform, website_platform, sedeId];
+  const values = [name_platform, website_platform, sedeId, periodicityId,createdUser];
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Platform_create(?,?,?)", values);
+  const result = await promisePool.query("CALL strp_Platform_create(?,?,?,?,?)", values);
   return result;
 };
 
@@ -25,8 +33,8 @@ export const getPlatformByIdModel = async (id_platform) => {
 export const getPlatformsAllModel = async (limit, offset, orderby, order, filter) => {
   limit = limit ?? "";
   offset = offset ?? "";
-  orderby = orderby ?? "";
-  order = order ?? "";
+  orderby = orderby ?? "id_platform";
+  order = order ?? "DESC";
   filter = filter ?? "";
 
   const values = [limit, offset, orderby, order, filter];
@@ -56,16 +64,17 @@ export const removeStatePlatformModel = async (id_platform) => {
   return result;
 };
 
-export const updatePlatformModel = async (id_platform, name_platform, website_platform, entityId) => {
-  id_platform = id_platform ?? "";
-  name_platform = name_platform ?? "";
-  website_platform = website_platform ?? "";
-  entityId = entityId ?? "";
-
-  const values = [id_platform, name_platform, website_platform, entityId];
-
+export const updatePlatformModel = async (
+  id_platform,
+  name_platform,
+  website_platform,
+  entityId,
+  periodicityId
+) => {
+  const values = [id_platform, name_platform, website_platform, entityId, periodicityId];
+  console.log(values)
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_Platform_patch(?,?,?,?)", values);
+  const result = await promisePool.query("CALL strp_Platform_patch(?,?,?,?,?)", values);
   return result;
 };
 

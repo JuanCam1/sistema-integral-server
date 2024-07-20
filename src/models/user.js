@@ -10,7 +10,8 @@ export const createUserModel = async (
   position_user,
   photo_user,
   profile_user,
-  areaId
+  areaId,
+  createdUser
 ) => {
   cedula_user = cedula_user ?? "";
   names_user = names_user ?? "";
@@ -21,6 +22,8 @@ export const createUserModel = async (
   position_user = position_user ?? "";
   photo_user = photo_user ?? "";
   profile_user = profile_user ?? "";
+  createdUser = createdUser ?? "";
+
   if (areaId === undefined || areaId === null || areaId === "" || areaId === 0) areaId = null;
 
   if (profile_user !== "Funcionario") {
@@ -37,21 +40,22 @@ export const createUserModel = async (
     position_user,
     photo_user,
     profile_user,
-    areaId
+    areaId,
+    createdUser
   ];
 
   console.log(values);
 
   const promisePool = db.get().promise();
-  const result = await promisePool.query("CALL strp_User_create(?,?,?,?,?,?,?,?,?,?)", values);
+  const result = await promisePool.query("CALL strp_User_create(?,?,?,?,?,?,?,?,?,?,?)", values);
   return result;
 };
 
 export const geUsersAllModel = async (limit, offset, orderby, order, filter) => {
   limit = limit ?? "";
   offset = offset ?? "";
-  orderby = orderby ?? "";
-  order = order ?? "";
+  orderby = orderby ?? "id_user";
+  order = order ?? "DESC";
   filter = filter ?? "";
 
   const values = [limit, offset, orderby, order, filter];
@@ -77,6 +81,16 @@ export const getUserByIdModel = async (id_user) => {
 
   const promisePool = db.get().promise();
   const result = await promisePool.query("CALL strp_User_getById(?)", values);
+  return result;
+};
+
+export const getUsersByIdAreaModel = async (id_area) => {
+  id_area = id_area ?? "";
+
+  const values = [id_area];
+
+  const promisePool = db.get().promise();
+  const result = await promisePool.query("CALL strp_User_getByIdArea(?)", values);
   return result;
 };
 
@@ -127,9 +141,10 @@ export const updateUserModel = async (
   email_user,
   password_user,
   position_user,
-  profile_user,
   photo_user,
-  areaId
+  profile_user,
+  areaId,
+  id_createdby
 ) => {
   id_user = id_user ?? "";
   cedula_user = cedula_user ?? "";
@@ -141,6 +156,7 @@ export const updateUserModel = async (
   position_user = position_user ?? "";
   photo_user = photo_user ?? "";
   profile_user = profile_user ?? "";
+  id_createdby = id_createdby ?? "";
 
   if (areaId === undefined || areaId === null || areaId === "" || areaId === 0) areaId = null;
 
@@ -155,13 +171,14 @@ export const updateUserModel = async (
     position_user,
     photo_user,
     profile_user,
-    areaId
+    areaId,
+    id_createdby
   ];
-  console.log("🚀 ~ values:", values);
+  console.log("🚀 ~ values despues:", values);
 
   const promisePool = db.get().promise();
   const result = await promisePool.query(
-    "CALL strp_User_patch(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "CALL strp_User_patch(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     values
   );
   return result;

@@ -1,85 +1,65 @@
-import { validationResult, matchedData } from "express-validator";
+import { matchedData } from "express-validator";
 import bcrypt from "bcryptjs";
 
 import { createToken } from "../services/jwt.js";
 import { sendErrorResponse } from "../utils/sendResponse.js";
 import { logger } from "../services/apilogger.js";
+import { loggerAdmin } from "../services/adminLogger.js";
 import { getByEmail } from "../models/login.js";
 
 export const login = async (req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/json");
-   
-    //Get matched data
-    const data = matchedData(req);
+  res.setHeader("Content-Type", "application/json");
+  const data = matchedData(req);
 
-    //Get user information
+  try {
     const [[[user]]] = await getByEmail(data.email_user);
 
     if (!user) return sendErrorResponse(res, 500, 301, "Error in database");
 
-    switch (user) {
+    if (user.state_user == 0) return sendErrorResponse(res, 401, 101, "User Inactivo");
+
+    switch (user.result) {
       case -1:
         return sendErrorResponse(res, 500, 301, "Error in database");
       case -2:
-        return sendErrorResponse(res, 404, 402, "User not found");
+        return sendErrorResponse(res, 404, 106, "User not found");
       case -3:
-        return sendErrorResponse(
-          res,
-          404,
-          467,
-          "Email not confirmed yet, please, verify your email inbox."
-        );
+        return sendErrorResponse(res, 404, 301, "Error in database");
     }
 
-    //Compare access
-    // var checkPassword = bcrypt.compareSync(data.password_user, User.password_user);
+    const checkPassword = bcrypt.compareSync(data.password_user, user.password_user);
+
+    if (!checkPassword) {
+      return sendErrorResponse(res, 401, 106, "Datos incorrectos");
+    }
+
+    if (user.profile_user === "Administrador") {
+      loggerAdmin.info(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data.email_user
+        )}","user":"${user.names_user}"}`
+      );
+    } else {
+      logger.info(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data.email_user
+        )}","user":"${user.names_user}"}`
+      );
+    }
 
     return res.status(200).send(JSON.stringify(createToken(user), null, 3));
-    // if (checkPassword) {
-    // } else {
-    //   return sendErrorResponse(res, 401, 106, "Wrong access");
-    // }
   } catch (err) {
     logger.error(
       `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
         req.params
-      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(req.body)}","user":"${
-        req.names_user
-      }", "error":"${err}"}`
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data.email_user
+      )}", "error":"${err}"}`
     );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
-
-//TODO: Faltante
-// export const reauthenticate = (req, res) => {
-//   try {
-//     res.setHeader("Content-Type", "application/json");
-//     logger.info(
-//       `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "body":"${JSON.stringify(
-//         req.body
-//       )}","user":"${req.user.user_id}"}`
-//     );
-//     //Create new Token
-//     return res.status(200).send(JSON.stringify(reAuthentificateToken(req.user), null, 3));
-//   } catch (err) {
-//     logger.error(
-//       `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
-//         req.params
-//       )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(req.body)}","user":"${
-//         req.user.user_id
-//       }", "error":"${err}"}`
-//     );
-//     return res.status(500).send(
-//       JSON.stringify(
-//         {
-//           success: false,
-//           error: { code: 301, message: "Error in service or database", details: err }
-//         },
-//         null,
-//         3
-//       )
-//     );
-//   }
-// };

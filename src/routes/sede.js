@@ -4,7 +4,6 @@ import {
   getDownloadSede,
   getSedeAll,
   getSedeById,
-  getSedesTotal,
   removeStateSede,
   updateSede
 } from "../controllers/sede.js";
@@ -74,15 +73,6 @@ routerSede.get(
   validateSedeState,
   handleValidationErrors,
   getDownloadSede
-);
-
-routerSede.get(
-  "/getSedesTotal/:state",
-  ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
-  validateSedeState,
-  handleValidationErrors,
-  getSedesTotal
 );
 
 export default routerSede;
