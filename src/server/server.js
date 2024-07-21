@@ -36,10 +36,6 @@ app.use(compression());
 //Configure security headers
 app.use(helmet());
 
-// app.use(helmet({
-//   crossOriginResourcePolicy: false,
-// }));
-
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "http://localhost:5173");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -47,8 +43,8 @@ app.use(function (req, res, next) {
 });
 
 app.use((req, res, next) => {
-  console.log("🏈 Solicitud recibida:", req.method, req.url);
-  console.log("🏈 Solicitud recibida:", req.body);
+  // console.log("🏈 Solicitud recibida:", req.method, req.url);
+  // console.log("🏈 Solicitud recibida:", req.body);
   // console.log('🏈 Solicitud recibida:', req.body, req.headers);
   // console.log('🏈 Solicitud recibida:', req.headers);
   next();
@@ -56,7 +52,6 @@ app.use((req, res, next) => {
 
 //Handle body parser errors
 app.use((err, req, res, next) => {
-  console.log("❌ ~ app.use ~ err:", err);
 
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     res.setHeader("Content-Type", "application/json");

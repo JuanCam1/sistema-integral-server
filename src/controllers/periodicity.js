@@ -13,6 +13,7 @@ import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js"
 import XlsxPopulate from "xlsx-populate";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 import { logger } from "../services/apilogger.js";
+import { loggerAdmin } from "../services/adminLogger.js";
 
 export const createPeriodicity = async (req, res) => {
   res.setHeader("Content-Type", "application/json");
@@ -20,6 +21,13 @@ export const createPeriodicity = async (req, res) => {
   const payload = JSON.parse(dataHeader);
 
   if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in authentification"}`
+    );
     return sendErrorResponse(res, 403, 107, "Error in authentification");
   }
 
@@ -33,64 +41,157 @@ export const createPeriodicity = async (req, res) => {
     const [[[periodicity]]] = await getPeriodicityIsExistModel(nameSearch);
 
     switch (periodicity.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Periodicity exists"}`
+        );
         return sendErrorResponse(res, 404, 402, "Periodicity exists");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error": "Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
+      }
     }
 
     const nameCapitalize = formatterCapitalize(type_periodicity);
 
     const [[[id_periodicity]]] = await createPeriodicityModel(nameCapitalize, createUserValid);
 
-    if (!id_periodicity) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (id_periodicity.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 402, "Error database");
-      case -2:
-        return sendErrorResponse(res, 500, 301, "Error in SQL");
-      case -3:
-        return sendErrorResponse(res, 500, 301, "Error durante ejecución");
+    if (!id_periodicity) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
+    switch (id_periodicity.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error database"}`
+        );
+        return sendErrorResponse(res, 500, 402, "Error database");
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in SQL"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error in SQL");
+      }
+      case -3: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error durante ejecución"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error durante ejecución");
+      }
+    }
+
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 202, data.id_sede);
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getPeriodicityById = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     const [[[periodicity]]] = await getPeriodicityByIdModel(data.idPeriodicity);
 
-    if (!periodicity) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!periodicity) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (periodicity.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Periodicity no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Periodicity no exist");
+      }
     }
 
     return sendSuccesResponse(res, 200, {
       periodicity
     });
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getPeriodicityAll = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     let filter = undefined;
     if (data.filter !== undefined) {
       filter = formatterCapitalize(data.filter);
@@ -103,12 +204,38 @@ export const getPeriodicityAll = async (req, res) => {
 
     const [[[periodicitiesCount]]] = await countPeriodicityAllModel(filter);
 
-    if (!periodicitiesCount) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    if (periodicitiesCount.result === -1)
+    if (!periodicitiesCount) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
       return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (periodicitiesCount.length == 0) return sendErrorResponse(res, 404, 301, "Is empty");
+    if (periodicitiesCount.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
+
+    if (periodicitiesCount.length == 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
 
     const [[periodicities]] = await getPeriodicityAllModel(
       data.limit,
@@ -118,59 +245,99 @@ export const getPeriodicityAll = async (req, res) => {
       filter
     );
 
-    if (!periodicities) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!periodicities) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     if (periodicities.length === 0) return sendErrorResponse(res, 404, 301, "Is empty");
 
-    if (periodicities[0].result === -1)
+    if (periodicities[0].result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
       return sendErrorResponse(res, 500, 301, "Error in database");
-
-    // loggerAdmin.info(
-    //   `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
-    //     req.params
-    //   )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
-    //     data.email_user
-    //   )}","user":"${user.names_user}"}`
-    // );
+    }
 
     return sendSuccesResponse(res, 200, {
       count: periodicitiesCount.count,
       periodicities: periodicities
     });
   } catch (error) {
-    // logger.error(
-    //   `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
-    //     req.params
-    //   )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
-    //     data
-    //   )}", "error":"${error}"}`
-    // );
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const updatePeriodicity = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
+
+  if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in authentification"}`
+    );
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-    const dataHeader = req.header("X-User-Data");
-    const payload = JSON.parse(dataHeader);
-
-    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
-      return sendErrorResponse(res, 403, 107, "Error in authentification");
-    }
-
-    const data = matchedData(req);
-
     const { idPeriodicity, type_periodicity } = data;
     const [[[periodicity]]] = await getPeriodicityByIdModel(idPeriodicity);
 
-    if (!periodicity) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!periodicity) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (periodicity.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Periodicity no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Periodicity no exist");
+      }
     }
 
     const isValid = (value) => value.trim() !== "";
@@ -182,17 +349,56 @@ export const updatePeriodicity = async (req, res) => {
 
     const [[[idPeriodicityBD]]] = await updatePeriodicityModel(idValidate, nameCapitalize);
 
-    if (!idPeriodicityBD) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (idPeriodicityBD.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 402, "Error database");
-      case -10:
-        return sendErrorResponse(res, 500, 301, "Periodicity no exist");
+    if (!idPeriodicityBD) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
+    switch (idPeriodicityBD.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error database"}`
+        );
+        return sendErrorResponse(res, 500, 402, "Error database");
+      }
+      case -10: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Platform no exist"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Periodicity no exist");
+      }
+    }
+
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 202, "Periodicity update");
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
@@ -203,13 +409,38 @@ export const getDownloadPeriodicity = async (req, res) => {
 
     const [[periodicities]] = await getDownloadPeriodicityModel();
 
-    if (!periodicities) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!periodicities) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (periodicities.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Periodicities no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Periodicities no exist");
+      }
     }
 
     const workbook = await XlsxPopulate.fromBlankAsync();
@@ -251,6 +482,11 @@ export const getDownloadPeriodicity = async (req, res) => {
     );
     res.send(buffer);
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"{}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };

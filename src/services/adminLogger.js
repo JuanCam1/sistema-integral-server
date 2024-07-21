@@ -6,7 +6,6 @@ import { config } from '../../config.js';
 const ENVIRONMENT = config.ENVIRONMENT;
 
 const logDir = 'logs';
-// Create the log directory if it does not exist
 if (!existsSync(logDir)) {
   mkdirSync(logDir);
 }

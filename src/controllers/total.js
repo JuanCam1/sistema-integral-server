@@ -149,8 +149,10 @@ export const getUsersByIdArea = async (req, res) => {
   try {
     res.setHeader("Content-Type", "application/json");
     const data = matchedData(req);
+    console.log("🚀 ~ getUsersByIdArea ~ data:", data);
 
     const [[users]] = await getUsersByIdAreaModel(data.idArea);
+    console.log("🚀 ~ getUsersByIdArea ~ users:", users);
 
     if (!users) return sendErrorResponse(res, 500, 301, "Error in database");
 

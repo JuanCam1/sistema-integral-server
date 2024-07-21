@@ -16,6 +16,8 @@ import XlsxPopulate from "xlsx-populate";
 import path from "path";
 import fs from "fs";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
+import { logger } from "../services/apilogger.js";
+import { loggerAdmin } from "../services/adminLogger.js";
 
 const mimeTypes = {
   ".jpeg": "image/jpeg",
@@ -31,6 +33,11 @@ export const getImage = async (req, res) => {
   fs.access(filepath, fs.constants.F_OK, (err) => {
     if (err) {
       console.log("err", err);
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"{}", "error":"Error in database"}`
+      );
       return sendErrorResponse(res, 404, 301, {
         filepath
       });
@@ -46,20 +53,24 @@ export const getImage = async (req, res) => {
 };
 
 export const createUser = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
     const dataHeader = req.header("X-User-Data");
     const payload = JSON.parse(dataHeader);
-    console.log("🚀 ~ createUser ~ payload:", payload);
 
     if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in authentification"}`
+      );
       return sendErrorResponse(res, 403, 107, "Error in authentification");
     }
 
     const createUserValid = payload.userIdPayload;
-    console.log("🚀 ~ createUser ~ createUserValid:", createUserValid);
-
-    const data = matchedData(req);
 
     const {
       cedula_user,
@@ -81,10 +92,24 @@ export const createUser = async (req, res) => {
     const [[[userEmail]]] = await getUserIsExistModel(email_user, "isExistEmail");
 
     if (userDocument == -1 || userEmail == -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"User Exist"}`
+      );
       return sendErrorResponse(res, 404, 402, "User exists");
     }
 
     if (userDocument == -2 || userEmail == -2) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
       return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
@@ -105,30 +130,76 @@ export const createUser = async (req, res) => {
       createUserValid
     );
 
-    if (!idUser) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (idUser.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 402, "Error database");
-      case -2:
-        return sendErrorResponse(res, 500, 301, "Error in SQL");
-      case -3:
-        return sendErrorResponse(res, 500, 301, "Error durante ejecución");
+    if (!idUser) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
+    switch (idUser.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
+        return sendErrorResponse(res, 500, 402, "Error database");
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in SQL"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error in SQL");
+      }
+      case -3: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error durante ejecución"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error durante ejecución");
+      }
+    }
+
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 202, idUser);
   } catch (error) {
-    // console.log("🚀 ~ createUser ~ error:", error);
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":${error}}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const updateUser = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
     const dataHeader = req.header("X-User-Data");
     const payload = JSON.parse(dataHeader);
-    const data = matchedData(req);
     const newPhoto = req?.file?.filename;
 
     const {
@@ -145,15 +216,39 @@ export const updateUser = async (req, res) => {
     } = data;
 
     const [[[user]]] = await getUserByIdModel(idUser);
-    console.log("🚀 ~ updateUser ~ user:", user);
 
-    if (!user) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!user) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (user.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"User no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "User no exist");
+      }
     }
 
     const isValid = (value) => value.trim() !== "" || value !== undefined || value !== null;
@@ -185,15 +280,20 @@ export const updateUser = async (req, res) => {
       if (newPhoto && user.photo_user) {
         fs.unlink(path.join(process.cwd(), "uploads/photos", user.photo_user), (err) => {
           if (err) {
-            console.error("Error deleting old image:", err);
-            return res.status(500).json({ error: "Error deleting old image" });
+            logger.error(
+              `{"verb":"${req.method}", "path":"${
+                req.baseUrl + req.path
+              }", "params":"${JSON.stringify(req.params)}", "query":"${JSON.stringify(
+                req.query
+              )}", "body":"${JSON.stringify(data)}", "error":"Error deleting old image"}`
+            );
+            return sendErrorResponse(res, 500, 301, "Error in update user");
           }
         });
       }
     }
 
     const photo = newPhoto || user.photo_user;
-    // console.log("🚀 ~ updateUser ~ photo:", photo);
 
     const [[[idUserDb]]] = await updateUserModel(
       idValidate,
@@ -209,29 +309,65 @@ export const updateUser = async (req, res) => {
       areaValid,
       user.id_createdby
     );
-    // console.log("🚀 ~ updateArea ~ idUserDb:", idUserDb);
 
-    if (!idUserDb) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (idUserDb.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 402, "Error database");
-      case -10:
-        return sendErrorResponse(res, 500, 301, "User no exist");
+    if (!idUserDb) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
+    switch (idUserDb.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error database"}`
+        );
+        return sendErrorResponse(res, 500, 402, "Error database");
+      }
+      case -10: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"User no exist"}`
+        );
+        return sendErrorResponse(res, 500, 301, "User no exist");
+      }
+    }
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 202, "user update");
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getUsersAll = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     let filter = undefined;
     if (data.filter !== undefined) {
       filter = formatterCapitalize(data.filter);
@@ -244,19 +380,66 @@ export const getUsersAll = async (req, res) => {
 
     const [[[usersCount]]] = await countAllUsersModel(filter);
 
-    if (!usersCount) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!usersCount) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (usersCount.result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (usersCount.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (usersCount.length == 0) return sendErrorResponse(res, 404, 301, "Is empty");
+    if (usersCount.length == 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is Empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
 
     const [[users]] = await geUsersAllModel(data.limit, data.offset, order_by, data.order, filter);
 
-    if (!users) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!users) {
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (users.length === 0) return sendErrorResponse(res, 404, 301, "Is empty");
+    if (users.length === 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is Empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
 
-    if (users[0].result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (users[0].result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     const usersMap = users.map((user) => {
       let { id_area, name_area } = user;
@@ -276,67 +459,157 @@ export const getUsersAll = async (req, res) => {
       users: usersMap
     });
   } catch (error) {
-    // console.log("🚀 ~ getUsersAll ~ error:", error);
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const removeStateUser = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
     const dataHeader = req.header("X-User-Data");
     const payload = JSON.parse(dataHeader);
 
     if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in authentification"}`
+      );
       return sendErrorResponse(res, 403, 107, "Error in authentification");
     }
 
-    const data = matchedData(req);
-
     const [[[user]]] = await getUserByIdModel(data.idUser);
 
-    if (!user) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!user) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (user.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"User no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "User no exist");
+      }
     }
 
     const [[[updateStateUser]]] = await removeStateUserModel(data.idUser);
 
-    if (!updateStateUser) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!updateStateUser) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (updateStateUser.result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
-
+    if (updateStateUser.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 200, "update state");
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const updateNavbarUser = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-
-    const data = matchedData(req);
     const newPhoto = req?.file?.filename;
 
-    // console.log("🚀 ~ updateuser ~ data:", data.profile_user);
     const { id_user, email_user, password_user } = data;
 
     const [[[user]]] = await getUserByIdModel(id_user);
 
-    if (!user) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!user) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (user.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"User no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "User no exist");
+      }
     }
 
     let hashedPassword;
@@ -351,12 +624,18 @@ export const updateNavbarUser = async (req, res) => {
       if (user.photo_user !== "sinphoto.jpg") {
         fs.unlink(path.join(process.cwd(), "uploads/photos", user.photo_user), (err) => {
           if (err) {
-            console.error("Error deleting old image:", err);
-            return res.status(500).json({ error: "Error deleting old image" });
+            logger.error(
+              `{"verb":"${req.method}", "path":"${
+                req.baseUrl + req.path
+              }", "params":"${JSON.stringify(req.params)}", "query":"${JSON.stringify(
+                req.query
+              )}", "body":"${JSON.stringify(data)}", "error":"Error deleting old image"}`
+            );
+            return sendErrorResponse(res, 500, 301, "Error deleting old image");
           }
         });
         photo = newPhoto;
-      }else{
+      } else {
         photo = newPhoto;
       }
     } else {
@@ -377,39 +656,84 @@ export const updateNavbarUser = async (req, res) => {
       user.id_area,
       user.id_createdby
     );
-    // console.log("🚀 ~ updateArea ~ idUserDb:", idUserDb);
 
     if (!idUserDb) return sendErrorResponse(res, 500, 301, "Error in database");
 
     switch (idUserDb.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error database"}`
+        );
         return sendErrorResponse(res, 500, 402, "Error database");
-      case -10:
+      }
+      case -10: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"User no exist"}`
+        );
         return sendErrorResponse(res, 500, 301, "User no exist");
+      }
     }
 
     return sendSuccesResponse(res, 202, "user update");
   } catch (error) {
-    console.log("🚀 ~ updateUser ~ error:", error);
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in service or database"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getDownloadUser = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     const [[users]] = await getDownloadUserModel(data.state);
 
-    if (!users) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!users) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (users.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Users  no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Users no exist");
+      }
     }
 
     const workbook = await XlsxPopulate.fromBlankAsync();
@@ -485,6 +809,13 @@ export const getDownloadUser = async (req, res) => {
     );
     res.send(buffer);
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in service or database"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };

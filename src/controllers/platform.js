@@ -13,30 +13,53 @@ import { formatterCapitalize } from "../utils/capitalize.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import XlsxPopulate from "xlsx-populate";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
+import { logger } from "../services/apilogger.js";
+import { loggerAdmin } from "../services/adminLogger.js";
 
 export const createPlatform = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
+
+  const data = matchedData(req);
+
+  if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in authentification"}`
+    );
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+  const createUserValid = payload.userIdPayload;
   try {
-    res.setHeader("Content-Type", "application/json");
-    const dataHeader = req.header("X-User-Data");
-    const payload = JSON.parse(dataHeader);
-    
-    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
-      return sendErrorResponse(res, 403, 107, "Error in authentification");
-    }
-
-    const createUserValid = payload.userIdPayload;
-
-    const data = matchedData(req);
-
     const { name_platform, website_platform, entityId, periodicityId } = data;
     const nameCapitalize = formatterCapitalize(name_platform);
     const [[[platform]]] = await getPlatformIsExistModel(nameCapitalize);
 
     switch (platform.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Platform exists"}`
+        );
         return sendErrorResponse(res, 404, 402, "Platform exists");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
+      }
     }
 
     const [[[id_platform]]] = await createPlatformModel(
@@ -47,54 +70,131 @@ export const createPlatform = async (req, res) => {
       createUserValid
     );
 
-    if (!id_platform) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (id_platform.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 402, "Error database");
-      case -2:
-        return sendErrorResponse(res, 500, 301, "Error in SQL");
-      case -3:
-        return sendErrorResponse(res, 500, 301, "Error durante ejecución");
+    if (!id_platform) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
+    switch (id_platform.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error database"}`
+        );
+        return sendErrorResponse(res, 500, 402, "Error database");
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in SQL"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error in SQL");
+      }
+      case -3: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error durante ejecución"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error durante ejecución");
+      }
+    }
+
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 202, data.id_platform);
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getPlatformById = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     const [[[platform]]] = await getPlatformByIdModel(data.idPlatform);
 
-    if (!platform) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!platform) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (platform.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Platform no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Platform no exist");
+      }
     }
 
     return sendSuccesResponse(res, 200, {
       platform
     });
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getPlatformsAll = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     let filter = undefined;
     if (data.filter !== undefined) {
       filter = formatterCapitalize(data.filter);
@@ -107,11 +207,38 @@ export const getPlatformsAll = async (req, res) => {
 
     const [[[platformsCount]]] = await countPlatformAllModel(filter);
 
-    if (!platformsCount) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!platformsCount) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (platformsCount.result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (platformsCount.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (platformsCount.length == 0) return sendErrorResponse(res, 404, 301, "Is empty");
+    if (platformsCount.length == 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
 
     const [[platforms]] = await getPlatformsAllModel(
       data.limit,
@@ -121,79 +248,206 @@ export const getPlatformsAll = async (req, res) => {
       filter
     );
 
-    if (!platforms) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!platforms) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (platforms.length === 0) return sendErrorResponse(res, 404, 301, "Is empty");
+    if (platforms.length === 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
 
-    if (platforms[0].result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (platforms[0].result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     return sendSuccesResponse(res, 200, {
       count: platformsCount.count,
       platforms: platforms
     });
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const removeStatePlatform = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
+
+  if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in authentification"}`
+    );
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+  const data = matchedData(req);
+
   try {
-    res.setHeader("Content-Type", "application/json");
-    const dataHeader = req.header("X-User-Data");
-    const payload = JSON.parse(dataHeader);
-    
-    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
-      return sendErrorResponse(res, 403, 107, "Error in authentification");
-    }
-
-    const data = matchedData(req);
-
     const [[[platform]]] = await getPlatformByIdModel(data.idPlatform);
 
-    if (!platform) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!platform) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (platform.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Platform no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Platform no exist");
+      }
     }
 
     const [[[updateStatePlatform]]] = await removeStatePlatformModel(data.idPlatform);
 
-    if (!updateStatePlatform) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    if (updateStatePlatform.result === -1)
+    if (!updateStatePlatform) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
       return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
+    if (updateStatePlatform.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
+
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 200, "update state");
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const updatePlatform = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
+
+  if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in authentification"}`
+    );
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-    const dataHeader = req.header("X-User-Data");
-    const payload = JSON.parse(dataHeader);
-    
-    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
-      return sendErrorResponse(res, 403, 107, "Error in authentification");
-    }
-
-    const data = matchedData(req);
-
     const { idPlatform, name_platform, website_platform, entityId, periodicityId } = data;
     const [[[platform]]] = await getPlatformByIdModel(idPlatform);
 
-    if (!platform) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!platform) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (platform.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Platform no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Platform no exist");
+      }
     }
 
     const isValid = (value) => value.trim() !== "";
@@ -214,36 +468,98 @@ export const updatePlatform = async (req, res) => {
       periodicityValid
     );
 
-    if (!idPlatformBD) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (idPlatformBD.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 402, "Error database");
-      case -10:
-        return sendErrorResponse(res, 500, 301, "Platform no exist");
+    if (!idPlatformBD) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
+    switch (idPlatformBD.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error database"}`
+        );
+        return sendErrorResponse(res, 500, 402, "Error database");
+      }
+      case -10: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Platform no exist"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Platform no exist");
+      }
+    }
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 202, "Platform update");
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getDownloadPlatform = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     const [[platforms]] = await getDownloadPlatformModel(data.state);
 
-    if (!platforms) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!platforms) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (platforms.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
-        return sendErrorResponse(res, 404, 402, "Platform no exist");
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Platforms no exist"}`
+        );
+        return sendErrorResponse(res, 404, 402, "Platforms no exist");
+      }
     }
 
     const workbook = await XlsxPopulate.fromBlankAsync();
@@ -301,6 +617,13 @@ export const getDownloadPlatform = async (req, res) => {
     );
     res.send(buffer);
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };

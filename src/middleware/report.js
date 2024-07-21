@@ -56,7 +56,8 @@ export const validateUpdateUploadReport = [
 
 export const validateUpdateDocumentReport = [
   check("idReport").exists(),
-  check("documentsReport").optional()
+  check("documentsReport").optional(),
+  check("dateShippingReport").optional()
 ];
 
 export const validateFileNameReport = [

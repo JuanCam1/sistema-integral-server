@@ -13,31 +13,55 @@ import { formatterCapitalize } from "../utils/capitalize.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import XlsxPopulate from "xlsx-populate";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
+import { logger } from "../services/apilogger.js";
+import { loggerAdmin } from "../services/adminLogger.js";
 
 export const createEntity = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
+
+  if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in authentification"}`
+    );
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+
+  const createUserValid = payload.userIdPayload;
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-    const dataHeader = req.header("X-User-Data");
-    const payload = JSON.parse(dataHeader);
-    
-    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
-      return sendErrorResponse(res, 403, 107, "Error in authentification");
-    }
-
-    const createUserValid = payload.userIdPayload;
-
-    const data = matchedData(req);
-
     const { name_entity, address_entity, phone_entity, email_entity } = data;
     const nameCapitalize = formatterCapitalize(name_entity);
 
     const [[[entity]]] = await getEntityIsExistModel(nameCapitalize, "isExistName");
 
     switch (entity.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Entity exists"}`
+        );
         return sendErrorResponse(res, 404, 402, "Entity exists");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
+      }
     }
 
     const addressCapitalize = formatterCapitalize(address_entity);
@@ -50,55 +74,130 @@ export const createEntity = async (req, res) => {
       createUserValid
     );
 
-    if (!id_entity) return sendErrorResponse(res, 500, 301, "Error in database");
-    
-
-    switch (id_entity) {
-      case -1:
-        return sendErrorResponse(res, 500, 402, "Error database");
-      case -2:
-        return sendErrorResponse(res, 500, 301, "Error in SQL");
-      case -3:
-        return sendErrorResponse(res, 500, 301, "Error durante ejecución");
+    if (!id_entity) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
+    switch (id_entity.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error database"}`
+        );
+        return sendErrorResponse(res, 500, 402, "Error database");
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in SQL"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error in SQL");
+      }
+      case -3: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error durante ejecución"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error durante ejecución");
+      }
+    }
+
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 202, id_entity);
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getEntityById = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const data = matchedData(req);
+
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     const [[[entity]]] = await getEntityByIdModel(data.idEntity);
 
-    if (!entity) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!entity) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (entity.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Entity no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Entity no exist");
+      }
     }
 
     return sendSuccesResponse(res, 200, {
       entity
     });
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getEntityAll = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     let filter = undefined;
     if (data.filter !== undefined) {
       filter = formatterCapitalize(data.filter);
@@ -111,11 +210,38 @@ export const getEntityAll = async (req, res) => {
 
     const [[[entitiesCount]]] = await countEntityAllModel(filter);
 
-    if (!entitiesCount) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!entitiesCount) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (entitiesCount.result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (entitiesCount.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
-    if (entitiesCount.length == 0) return sendErrorResponse(res, 404, 301, "Is empty");
+    if (entitiesCount.length == 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
 
     const [[entities]] = await getEntityAllModel(
       data.limit,
@@ -125,81 +251,207 @@ export const getEntityAll = async (req, res) => {
       filter
     );
 
-    if (!entities) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!entities) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
+    if (entities.length === 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
 
-    if (entities.length === 0) return sendErrorResponse(res, 404, 301, "Is empty");
-
-    if (entities[0].result === -1) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (entities[0].result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     return sendSuccesResponse(res, 200, {
       count: entitiesCount.count,
       entities: entities
     });
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const removeStateEntity = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
+
+  if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in authentification"}`
+    );
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+
+  const data = matchedData(req);
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const dataHeader = req.header("X-User-Data");
-    const payload = JSON.parse(dataHeader);
-    
-    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
-      return sendErrorResponse(res, 403, 107, "Error in authentification");
-    }
-
-    const data = matchedData(req);
-
     const [[[entity]]] = await getEntityByIdModel(data.idEntity);
 
-    if (!entity) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!entity) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (entity.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Sede no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Sede no exist");
+      }
     }
 
     const [[[updateStateEntity]]] = await removeStateEntityModel(data.idEntity);
 
-    if (!updateStateEntity) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    if (updateStateEntity.result === -1)
+    if (!updateStateEntity) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
       return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
+    if (updateStateEntity.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
+
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 200, "update state");
   } catch (error) {
-    console.log("🚀 ~ removeStateEntity ~ error:", error);
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const updateEntity = async (req, res) => {
-  try {
-    res.setHeader("Content-Type", "application/json");
-    const dataHeader = req.header("X-User-Data");
-    const payload = JSON.parse(dataHeader);
-    
-    if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
-      return sendErrorResponse(res, 403, 107, "Error in authentification");
-    }
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const payload = JSON.parse(dataHeader);
 
-    const data = matchedData(req);
+  if (!payload.userIdPayload || payload.profilePayload !== "Administrador") {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"Error in authentification"}`
+    );
+    return sendErrorResponse(res, 403, 107, "Error in authentification");
+  }
+
+  const data = matchedData(req);
+  try {
     const { idEntity, name_entity, address_entity, phone_entity, email_entity } = data;
 
     const [[[entity]]] = await getEntityByIdModel(idEntity);
 
-    if (!entity) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!entity) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (entity.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Entity no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "Entity no exist");
+      }
     }
 
     const isValid = (value) => value.trim() !== "";
@@ -212,7 +464,7 @@ export const updateEntity = async (req, res) => {
       ? formatterCapitalize(address_entity)
       : entity.address_entity;
 
-    console.log(idValidate, nameCapitalize, addressCapitalize, phone_entity, email_entity);
+    // console.log(idValidate, nameCapitalize, addressCapitalize, phone_entity, email_entity);
 
     const [[[idEntityBD]]] = await updateEntityModel(
       idValidate,
@@ -222,75 +474,162 @@ export const updateEntity = async (req, res) => {
       email_entity
     );
 
-    if (!idEntityBD) return sendErrorResponse(res, 500, 301, "Error in database");
-
-    switch (idEntityBD.result) {
-      case -1:
-        return sendErrorResponse(res, 500, 402, "Error database");
-      case -10:
-        return sendErrorResponse(res, 500, 301, "Entity no exist");
+    if (!idEntityBD) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
     }
 
+    switch (idEntityBD.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error database"}`
+        );
+        return sendErrorResponse(res, 500, 402, "Error database");
+      }
+      case -10: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error": "Entity no exist"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Entity no exist");
+      }
+    }
+
+    loggerAdmin.info(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(data)}","user":"${
+        payload.namePayload
+      }"}`
+    );
     return sendSuccesResponse(res, 202, "Entity update");
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getEntitiesTotal = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const data = matchedData(req);
+
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     const [[entities]] = await getDownloadEntityModel(data.state);
 
-    if (!entities) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!entities) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (entities.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"entities no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "entities no exist");
+      }
     }
 
     return sendSuccesResponse(res, 200, {
       entities: entities
     });
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
 
 export const getDownloadEntity = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const data = matchedData(req);
+
   try {
-    res.setHeader("Content-Type", "application/json");
-
-    const data = matchedData(req);
-
     const [[entities]] = await getDownloadEntityModel(data.state);
 
-    if (!entities) return sendErrorResponse(res, 500, 301, "Error in database");
+    if (!entities) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
 
     switch (entities.result) {
-      case -1:
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
         return sendErrorResponse(res, 500, 301, "Error in database");
-      case -2:
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"entities no exist"}`
+        );
         return sendErrorResponse(res, 404, 402, "entities no exist");
+      }
     }
 
     const workbook = await XlsxPopulate.fromBlankAsync();
     const sheet = workbook.sheet(0);
     sheet.row(1).style("bold", true);
 
-    const headers = [
-      "No.",
-      "Nombre Entidad",
-      "Dirección",
-      "Telefono",
-      "Correo",
-      "Estado",
-    ];
+    const headers = ["No.", "Nombre Entidad", "Dirección", "Telefono", "Correo", "Estado"];
     // "Creado Por"
     headers.forEach((header, idx) => {
       sheet
@@ -341,6 +680,13 @@ export const getDownloadEntity = async (req, res) => {
     );
     res.send(buffer);
   } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":"${error}"}`
+    );
     return sendErrorResponse(res, 500, 301, "Error in service or database");
   }
 };
