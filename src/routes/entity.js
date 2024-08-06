@@ -32,7 +32,7 @@ routerEntity.post(
 routerEntity.post(
   "/getEntityAll",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateEntityAll,
   handleValidationErrors,
   getEntityAll
@@ -41,7 +41,7 @@ routerEntity.post(
 routerEntity.get(
   "/getEntityById/:idEntity",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateEntityById,
   handleValidationErrors,
   getEntityById
@@ -69,7 +69,7 @@ routerEntity.patch(
 routerEntity.get(
   "/getDownload/:state",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateEntityState,
   handleValidationErrors,
   getDownloadEntity

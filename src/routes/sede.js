@@ -32,7 +32,7 @@ routerSede.post(
 routerSede.post(
   "/getSedeAll",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateSedeAll,
   handleValidationErrors,
   getSedeAll
@@ -41,7 +41,7 @@ routerSede.post(
 routerSede.get(
   "/getSedeById/:idSede",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateSedeById,
   handleValidationErrors,
   getSedeById
@@ -69,7 +69,7 @@ routerSede.patch(
 routerSede.get(
   "/getDownload/:state",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateSedeState,
   handleValidationErrors,
   getDownloadSede

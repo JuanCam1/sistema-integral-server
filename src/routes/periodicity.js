@@ -30,7 +30,7 @@ routerPeriodicity.post(
 routerPeriodicity.post(
   "/getPeriodicityAll",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validatePeriodicityAll,
   handleValidationErrors,
   getPeriodicityAll
@@ -39,7 +39,7 @@ routerPeriodicity.post(
 routerPeriodicity.get(
   "/getPeriodicityById/:idPeriodicity",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validatePeriodicityById,
   handleValidationErrors,
   getPeriodicityById
@@ -58,7 +58,7 @@ routerPeriodicity.patch(
 routerPeriodicity.get(
   "/getDownload",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   getDownloadPeriodicity
 );
 

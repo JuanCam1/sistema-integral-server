@@ -1,6 +1,5 @@
 import { db } from "../../db/db.js";
 
-
 export const createReportModel = async (
   nameCapitalize,
   normativityCapitalize,
@@ -178,6 +177,40 @@ export const getReportsAllUserModel = async (
   return result;
 };
 
+export const getReportsAllAreaFechaModel = async (
+  limit,
+  offset,
+  orderby,
+  order,
+  areaId,
+  fechaInit,
+  fechaFin
+) => {
+  limit = limit ?? "";
+  offset = offset ?? "";
+  orderby = orderby ?? "";
+  order = order ?? "";
+  areaId = areaId ?? "";
+  fechaInit = fechaInit ?? "";
+  fechaFin = fechaFin ?? "";
+
+  const values = [limit, offset, orderby, order, areaId, fechaInit, fechaFin];
+  const promisePool = db.get().promise();
+  const result = await promisePool.query("CALL strp_Report_AreaFechas(?,?,?,?,?,?,?)", values);
+  return result;
+};
+
+export const getReportsCountAllAreaFechaModel = async (areaId, fechaInit, fechaFin) => {
+  areaId = areaId ?? "";
+  fechaInit = fechaInit ?? "";
+  fechaFin = fechaFin ?? "";
+
+  const values = [areaId, fechaInit, fechaFin];
+  const promisePool = db.get().promise();
+  const result = await promisePool.query("CALL strp_Report_AreaFechas_countAll(?,?,?)", values);
+  return result;
+};
+
 export const getReportsAllSinLimitUserModel = async (profile_user, id_user, state1, state2) => {
   profile_user = profile_user ?? "";
   id_user = id_user ?? "";
@@ -248,5 +281,45 @@ export const getDownloadReportModel = async (state) => {
 
   const promisePool = db.get().promise();
   const result = await promisePool.query("CALL strp_Report_state(?)", values);
+  return result;
+};
+
+export const getReportsStateByAreaModel = async (state,areaId) => {
+  state = state ?? "3";
+  areaId = areaId ?? "";
+
+  const values = [state,areaId];
+
+  const promisePool = db.get().promise();
+  const result = await promisePool.query("CALL strp_Report_stateByIdArea(?,?)", values);
+  return result;
+};
+
+
+export const getReportsAllAreaNoEnviadoModel = async (
+  limit,
+  offset,
+  orderby,
+  order,
+  areaId
+) => {
+  limit = limit ?? "";
+  offset = offset ?? "";
+  orderby = orderby ?? "";
+  order = order ?? "";
+  areaId = areaId ?? "";
+
+  const values = [limit, offset, orderby, order, areaId];
+  const promisePool = db.get().promise();
+  const result = await promisePool.query("CALL strp_Report_AreaNoEnviado(?,?,?,?,?)", values);
+  return result;
+};
+
+export const getReportsCountAllAreaNoEnviadoModel = async (areaId) => {
+  areaId = areaId ?? "";
+
+  const values = [areaId];
+  const promisePool = db.get().promise();
+  const result = await promisePool.query("CALL strp_Report_AreaNoEnviado_countAll(?)", values);
   return result;
 };

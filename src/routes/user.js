@@ -63,7 +63,7 @@ routerUsers.post(
 routerUsers.patch(
   "/updateUser/:idUser",
   ensureJWTAuth,
-  hasType(["Administrador","Funcionario","Director"]),
+  hasType(["Administrador"]),
   upload.single("photo_user"),
   validateUserById,
   validateUpdateUser,

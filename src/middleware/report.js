@@ -76,6 +76,11 @@ export const validateReportState = [
   check("state").exists().withMessage("Report state is required")
 ];
 
+export const validateReportesStateByAreaId = [
+  check("state").exists().withMessage("Report state is required"),
+  check("areaId").exists().withMessage("area Id is required")
+];
+
 export const validateReportAll = [
   check("limit").optional().isInt({ min: 1 }).withMessage("Should be an integer greater than 0"),
   check("offset").optional().isInt({ min: 0 }).withMessage("Should be an integer"),
@@ -134,6 +139,42 @@ export const validateReportAll = [
       return true;
     }),
   check("state_report").optional()
+];
+
+
+
+export const validateReportAreaFechaAll = [
+  check("limit").optional().isInt({ min: 1 }).withMessage("Should be an integer greater than 0"),
+  check("offset").optional().isInt({ min: 0 }).withMessage("Should be an integer"),
+  check("order")
+    .optional()
+    .isInt({ min: 0, max: 1 })
+    .withMessage("Should be an integer between 0 and 1"),
+  check("order_by")
+    .optional()
+    .isLength({ min: 1, max: 255 })
+    .withMessage("Must be between 1 and 255 characters")
+    .custom((value) => {
+      const fields = [
+        "name_report",
+        "state_report",
+        "signature_report",
+        "date_from_report",
+        "date_to_report",
+        "name_area",
+        "name_platform",
+        "type_periodicity",
+        "name_entity",
+        "names_user"
+      ];
+      if (!fields.includes(value)) throw new Error("Not a valid field");
+      else return true;
+    })
+    .trim(),
+  
+  check("areaId").optional(),
+  check("fechaInit").optional(),
+  check("fechaFin").optional()
 ];
 
 export const validateReportAllSinLimit = [check("state_report").optional()];

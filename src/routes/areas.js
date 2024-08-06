@@ -32,7 +32,7 @@ routerAreas.post(
 routerAreas.post(
   "/getAreasAll",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateAreaAll,
   handleValidationErrors,
   getAreasAll
@@ -41,7 +41,7 @@ routerAreas.post(
 routerAreas.get(
   "/getAreaById/:idArea",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateAreaById,
   handleValidationErrors,
   getAreaById
@@ -69,7 +69,7 @@ routerAreas.patch(
 routerAreas.get(
   "/getDownoload/:state",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateAreaState,
   handleValidationErrors,
   getDownloadArea

@@ -10,7 +10,12 @@ import {
   getDownloadReportModel,
   getReportsAllUserModel,
   countAllReportUserModel,
-  getReportsAllSinLimitUserModel
+  getReportsAllSinLimitUserModel,
+  getReportsCountAllAreaFechaModel,
+  getReportsAllAreaFechaModel,
+  getReportsCountAllAreaNoEnviadoModel,
+  getReportsAllAreaNoEnviadoModel,
+  getReportsStateByAreaModel
 } from "../models/report.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import { formatterCapitalize } from "../utils/capitalize.js";
@@ -156,7 +161,6 @@ const deleteReport = (filename) => {
 
   fs.unlink(path.join(process.cwd(), "uploads/reports", filename), (err) => {
     if (err) {
-      console.error("Error deleting old image:", err);
       return res.status(500).json({ error: "Error deleting old image" });
     }
   });
@@ -236,7 +240,7 @@ export const updateDocumentReport = async (req, res) => {
       return sendErrorResponse(res, 403, 107, "Error in authentification");
     }
 
-    const shipping = data.dateShippingReport ?? report.date_shipping_report
+    const shipping = data.dateShippingReport ?? report.date_shipping_report;
 
     const [[[idReportDb]]] = await updateReportModel(
       data.idReport,
@@ -1394,6 +1398,350 @@ export const getDownloadReport = async (req, res) => {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     res.send(buffer);
+  } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":${error}}`
+    );
+    return sendErrorResponse(res, 500, 301, "Error in service or database");
+  }
+};
+
+export const reportesAllState = async (req, res) => {
+  const data = matchedData(req);
+
+  try {
+    const [[reports]] = await getDownloadReportModel(4);
+
+    if (!reports) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
+
+    switch (reports.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error in database");
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"report no exist"}`
+        );
+        return sendErrorResponse(res, 404, 402, "reports no exist");
+      }
+    }
+    return sendSuccesResponse(res, 200, reports);
+  } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":${error}}`
+    );
+    return sendErrorResponse(res, 500, 301, "Error in service or database");
+  }
+};
+
+export const getReportsAllAreaFecha = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const data = matchedData(req);
+  try {
+    const payload = JSON.parse(dataHeader);
+
+    const userValid = payload.userIdPayload;
+    const profileValid = payload.profilePayload;
+
+    if (!userValid || profileValid === "Funcionario") {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in authentification"}`
+      );
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+    const { areaId, fechaInit, fechaFin } = data;
+
+    let order_by = undefined;
+    if (data.order_by !== undefined) {
+      order_by = data.order_by;
+    }
+
+    const [[[reportCount]]] = await getReportsCountAllAreaFechaModel(areaId, fechaInit, fechaFin);
+
+    if (!reportCount) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 402, "Error in database");
+    }
+
+    if (reportCount.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 402, "Error in database");
+    }
+
+    if (reportCount.length == 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
+
+    const [[reports]] = await getReportsAllAreaFechaModel(
+      data.limit,
+      data.offset,
+      order_by,
+      data.order,
+      areaId,
+      fechaInit,
+      fechaFin
+    );
+
+    if (!reports) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 402, "Error in database");
+    }
+
+    if (reports.length === 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
+
+    if (reports[0].result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 402, "Error in database");
+    }
+
+    return sendSuccesResponse(res, 200, {
+      count: reportCount.count,
+      reports
+    });
+  } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":${error}}`
+    );
+    return sendErrorResponse(res, 500, 301, "Error in service or database");
+  }
+};
+
+export const getReportsAllAreaNoEnviado = async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const dataHeader = req.header("X-User-Data");
+  const data = matchedData(req);
+  try {
+    const payload = JSON.parse(dataHeader);
+
+    const userValid = payload.userIdPayload;
+    const profileValid = payload.profilePayload;
+
+    if (!userValid || profileValid === "Funcionario") {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in authentification"}`
+      );
+      return sendErrorResponse(res, 403, 107, "Error in authentification");
+    }
+    const { areaId } = data;
+
+    let order_by = undefined;
+    if (data.order_by !== undefined) {
+      order_by = data.order_by;
+    }
+
+    const [[[reportCount]]] = await getReportsCountAllAreaNoEnviadoModel(areaId);
+
+    if (!reportCount) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 402, "Error in database");
+    }
+
+    if (reportCount.result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 402, "Error in database");
+    }
+
+    if (reportCount.length == 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
+
+    const [[reports]] = await getReportsAllAreaNoEnviadoModel(
+      data.limit,
+      data.offset,
+      order_by,
+      data.order,
+      areaId
+    );
+
+    if (!reports) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 402, "Error in database");
+    }
+
+    if (reports.length === 0) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Is empty"}`
+      );
+      return sendErrorResponse(res, 404, 301, "Is empty");
+    }
+
+    if (reports[0].result === -1) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 402, "Error in database");
+    }
+
+    return sendSuccesResponse(res, 200, {
+      count: reportCount.count,
+      reports
+    });
+  } catch (error) {
+    logger.error(
+      `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+        req.params
+      )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+        data
+      )}", "error":${error}}`
+    );
+    return sendErrorResponse(res, 500, 301, "Error in service or database");
+  }
+};
+
+export const reportesStateByAreaId = async (req, res) => {
+  const data = matchedData(req);
+
+  try {
+    const [[[reports]]] = await getReportsStateByAreaModel(data.state, data.areaId);
+
+    if (!reports) {
+      logger.error(
+        `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+          req.params
+        )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+          data
+        )}", "error":"Error in database"}`
+      );
+      return sendErrorResponse(res, 500, 301, "Error in database");
+    }
+
+    switch (reports.result) {
+      case -1: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"Error in database"}`
+        );
+        return sendErrorResponse(res, 500, 301, "Error in database");
+      }
+      case -2: {
+        logger.error(
+          `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(
+            req.params
+          )}", "query":"${JSON.stringify(req.query)}", "body":"${JSON.stringify(
+            data
+          )}", "error":"report no exist"}`
+        );
+        return sendErrorResponse(res, 404, 402, "reports no exist");
+      }
+    }
+    return sendSuccesResponse(res, 200, reports.count);
   } catch (error) {
     logger.error(
       `{"verb":"${req.method}", "path":"${req.baseUrl + req.path}", "params":"${JSON.stringify(

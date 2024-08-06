@@ -4,13 +4,13 @@ import bodyParser from "body-parser";
 import compression from "compression";
 import helmet from "helmet";
 import routerLogin from "../routes/login.js";
+import routerUsers from "../routes/user.js";
+import routerPlatforms from "../routes/Platform.js";
 import routerAreas from "../routes/areas.js";
 import { sendErrorResponse } from "../utils/sendResponse.js";
-import routerPlatforms from "../routes/Platform.js";
 import routerSede from "../routes/sede.js";
 import routerPeriodicity from "../routes/periodicity.js";
 import routerEntity from "../routes/entity.js";
-import routerUsers from "../routes/user.js";
 import routerSchedule from "../routes/schedule.js";
 import routerReport from "../routes/report.js";
 import routerTotal from "../routes/total.js";
@@ -67,14 +67,14 @@ app.get("/", (req, res) => {
 });
 
 app.use("/login", routerLogin);
+app.use("/users", routerUsers);
 app.use("/areas", routerAreas);
 app.use("/sedes", routerSede);
 app.use("/platforms", routerPlatforms);
 app.use("/entities", routerEntity);
 app.use("/periodicity", routerPeriodicity);
-app.use("/users", routerUsers);
 app.use("/schedules", routerSchedule);
-app.use("/reports", routerReport);
 app.use("/totals", routerTotal);
+app.use("/reports", routerReport);
 
 export default app;

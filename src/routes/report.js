@@ -15,7 +15,9 @@ import {
   validateUpdateUploadReport,
   validateReportAllSinLimit,
   validateFileNameReport,
-  validateUpdateDocumentReport
+  validateUpdateDocumentReport,
+  validateReportAreaFechaAll,
+  validateReportesStateByAreaId
 } from "../middleware/report.js";
 import {
   getReportById,
@@ -29,7 +31,11 @@ import {
   updateUploadReport,
   getReportsAllSinLimitUser,
   getDocuments,
-  updateDocumentReport
+  updateDocumentReport,
+  reportesAllState,
+  getReportsAllAreaFecha,
+  getReportsAllAreaNoEnviado,
+  reportesStateByAreaId
 } from "../controllers/report.js";
 
 const storageDocuments = multer.diskStorage({
@@ -122,6 +128,24 @@ routerReport.post(
 );
 
 routerReport.post(
+  "/getReportsAllAreaFecha",
+  ensureJWTAuth,
+  hasType(["Administrador", "Director"]),
+  validateReportAreaFechaAll,
+  handleValidationErrors,
+  getReportsAllAreaFecha
+);
+
+routerReport.post(
+  "/getReportsAllAreaNoEnviado",
+  ensureJWTAuth,
+  hasType(["Administrador", "Director"]),
+  validateReportAreaFechaAll,
+  handleValidationErrors,
+  getReportsAllAreaNoEnviado
+);
+
+routerReport.post(
   "/getReportsAllSinLimitUser",
   ensureJWTAuth,
   hasType(["Funcionario"]),
@@ -173,6 +197,22 @@ routerReport.get(
   validateReportState,
   handleValidationErrors,
   getDownloadReport
+);
+
+routerReport.get(
+  "/getReportesAllState",
+  ensureJWTAuth,
+  hasType(["Administrador", "Director"]),
+  reportesAllState
+);
+
+routerReport.post(
+  "/reportesStateByAreaId",
+  ensureJWTAuth,
+  hasType(["Administrador", "Director"]),
+  validateReportesStateByAreaId,
+  handleValidationErrors,
+  reportesStateByAreaId
 );
 
 export default routerReport;

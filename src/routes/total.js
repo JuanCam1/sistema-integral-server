@@ -9,49 +9,49 @@ const routerTotal = Router();
 routerTotal.get(
   "/getAreasTotal",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   getAreasTotal
 );
 
 routerTotal.get(
   "/getEntitiesTotal",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   getEntitiesTotal
 );
 
 routerTotal.get(
   "/getPeriodicitiesTotal",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   getPeriodicitiesTotal
 );
 
 routerTotal.get(
   "/getPlatformsTotal",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   getPlatformsTotal
 );
 
 routerTotal.get(
   "/getSedeTotal",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   getSedeTotal
 );
 
 routerTotal.get(
   "/getUsersTotal",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   getUsersTotal
 );
 
 routerTotal.get(
   "/getUsersByIdArea/:idArea",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validateAreaById,
   handleValidationErrors,
   getUsersByIdArea

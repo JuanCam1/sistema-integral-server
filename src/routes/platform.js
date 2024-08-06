@@ -32,7 +32,7 @@ routerPlatforms.post(
 routerPlatforms.post(
   "/getPlatformAll",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validatePlatformAll,
   handleValidationErrors,
   getPlatformsAll
@@ -41,7 +41,7 @@ routerPlatforms.post(
 routerPlatforms.get(
   "/getPlatformById/:idPlatform",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validatePlatformById,
   handleValidationErrors,
   getPlatformById
@@ -69,7 +69,7 @@ routerPlatforms.patch(
 routerPlatforms.get(
   "/getDownload/:state",
   ensureJWTAuth,
-  hasType(["Administrador", "Director", "Gestor"]),
+  hasType(["Administrador", "Director"]),
   validatePlatformState,
   handleValidationErrors,
   getDownloadPlatform
