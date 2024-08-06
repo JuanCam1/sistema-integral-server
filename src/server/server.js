@@ -21,7 +21,7 @@ const app = express();
 //Enable ALL CORS Requests
 app.use(
   cors({
-    origin: "http://localhost:5173", 
+    origin: "https://sistemaintegral.fksas.com", 
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE"
   })
 );
@@ -37,7 +37,7 @@ app.use(compression());
 app.use(helmet());
 
 app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.header("Access-Control-Allow-Origin", "https://sistemaintegral.fksas.com");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
