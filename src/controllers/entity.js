@@ -13,7 +13,7 @@ import { formatterCapitalize } from "../utils/capitalize.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 import XlsxPopulate from "xlsx-populate";
 import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
-import { logger } from "../services/apilogger.js";
+import { logger } from "../services/apiLogger.js";
 import { loggerAdmin } from "../services/adminLogger.js";
 
 export const createEntity = async (req, res) => {

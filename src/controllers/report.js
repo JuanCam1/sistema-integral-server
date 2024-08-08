@@ -24,7 +24,7 @@ import { autoAdjustColumnWidth } from "../utils/ajustColum.js";
 import archiver from "archiver";
 import path from "path";
 import fs from "fs";
-import { logger } from "../services/apilogger.js";
+import { logger } from "../services/apiLogger.js";
 import { loggerAdmin } from "../services/adminLogger.js";
 
 export const createReport = async (req, res) => {

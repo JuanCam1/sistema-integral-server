@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 import { createToken } from "../services/jwt.js";
 import { sendErrorResponse } from "../utils/sendResponse.js";
-import { logger } from "../services/apilogger.js";
+import { logger } from "../services/apiLogger.js";
 import { loggerAdmin } from "../services/adminLogger.js";
 import { getByEmail } from "../models/login.js";
 

@@ -1,5 +1,5 @@
 import { getScheduleModel } from "../models/schedule.js";
-import { logger } from "../services/apilogger.js";
+import { logger } from "../services/apiLogger.js";
 import { sendErrorResponse, sendSuccesResponse } from "../utils/sendResponse.js";
 
 export const getSchedule = async (req, res) => {
