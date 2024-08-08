@@ -5,7 +5,6 @@ import compression from "compression";
 import helmet from "helmet";
 import routerLogin from "../routes/login.js";
 import routerUsers from "../routes/user.js";
-import routerPlatforms from "../routes/Platform.js";
 import routerAreas from "../routes/areas.js";
 import { sendErrorResponse } from "../utils/sendResponse.js";
 import routerSede from "../routes/sede.js";
@@ -14,6 +13,7 @@ import routerEntity from "../routes/entity.js";
 import routerSchedule from "../routes/schedule.js";
 import routerReport from "../routes/report.js";
 import routerTotal from "../routes/total.js";
+import routerPlatforms from "../routes/platformRoute.js";
 
 //Create app
 const app = express();
