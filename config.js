@@ -10,6 +10,6 @@ export const config = {
   ENVIRONMENT: process.env.ENVIRONMENT || "production",
   BASIC_AUTH_USER: process.env.BASIC_AUTH_USER || "",
   BASIC_AUTH_PASSWORD: process.env.BASIC_AUTH_PASSWORD || "",
-  APP_PORT: process.env.APP_PORT || "1338",
+  APP_PORT: process.env.APP_PORT || "1339",
   APP_PORT_DB: process.env.APP_PORT_DB || "3306"
 };
