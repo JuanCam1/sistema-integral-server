@@ -60,21 +60,21 @@ app.use((err, req, res, next) => {
   next();
 });
 
-app.get("/", (req, res) => {
+app.get("/sic/welcome", (req, res) => {
   res.status(200).send({
     message: "Welcome to the API"
   });
 });
 
-app.use("/login", routerLogin);
-app.use("/users", routerUsers);
-app.use("/areas", routerAreas);
-app.use("/sedes", routerSede);
-app.use("/platforms", routerPlatforms);
-app.use("/entities", routerEntity);
-app.use("/periodicity", routerPeriodicity);
-app.use("/schedules", routerSchedule);
-app.use("/totals", routerTotal);
-app.use("/reports", routerReport);
+app.use("/sic/login", routerLogin);
+app.use("/sic/users", routerUsers);
+app.use("/sic/areas", routerAreas);
+app.use("/sic/sedes", routerSede);
+app.use("/sic/platforms", routerPlatforms);
+app.use("/sic/entities", routerEntity);
+app.use("/sic/periodicity", routerPeriodicity);
+app.use("/sic/schedules", routerSchedule);
+app.use("/sic/totals", routerTotal);
+app.use("/sic/reports", routerReport);
 
 export default app;
