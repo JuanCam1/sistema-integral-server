@@ -4,7 +4,7 @@ import { publicIpv4 } from "public-ip";
 import app from "./src/server/server.js";
 import { db } from "./db/db.js";
 import { config } from "./config.js";
-import { logger } from "./src/services/apilogger.js";
+import { logger } from "./src/services/apiLogger.js";
 
 //Get IP
 publicIpv4().then((ip) => {
